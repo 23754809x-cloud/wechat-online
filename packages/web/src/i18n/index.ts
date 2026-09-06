@@ -18,6 +18,8 @@ export const ANTD_LANG_MAP = {
 	"en-US": enUS,
 };
 
+const publicBaseUrl = import.meta.env.BASE_URL || "/";
+
 i18n
 	.use(Backend)
 	.use(LanguageDetector)
@@ -25,6 +27,14 @@ i18n
 	.init({
 		supportedLngs: ["zh-CN", "zh-TW", "en-US"],
 		fallbackLng: "zh-CN",
+		backend: {
+			// GitHub Pages is served from /wechat-online/, not the domain root.
+			loadPath: `${publicBaseUrl}locales/{{lng}}/translation.json`,
+		},
+		detection: {
+			order: ["localStorage", "navigator", "htmlTag"],
+			caches: ["localStorage"],
+		},
 	});
 
 export function getCurrentLanguage() {
