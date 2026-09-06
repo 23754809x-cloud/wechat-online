@@ -79,7 +79,7 @@ const AddFriendModal = ({ open, onClose }: Props) => {
 						<HashAssets src={avatarInfo} className="h-16 w-16 rounded-lg object-cover" />
 						<button
 							type="button"
-							className="rounded-md border border-black/10 px-3 py-2 text-sm"
+							className="whitespace-nowrap rounded-md border border-black/10 px-3 py-2 text-sm"
 							onClick={() => fileInputRef.current?.click()}
 						>
 							选择头像
@@ -88,7 +88,9 @@ const AddFriendModal = ({ open, onClose }: Props) => {
 							ref={fileInputRef}
 							type="file"
 							accept="image/*"
-							className="hidden"
+							hidden
+							aria-hidden="true"
+							tabIndex={-1}
 							onChange={(event) => void handleAvatar(event.target.files?.[0])}
 						/>
 					</div>
