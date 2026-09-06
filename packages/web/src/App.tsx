@@ -6,6 +6,7 @@ import RightPanel from "./components/RightPanel";
 import Screen from "./components/Screen";
 import TopPopover from "./components/TopPopover";
 import Tour from "./components/Tour";
+import MobileCreatorPanel from "./components/MobileCreatorPanel";
 import { ANTD_LANG_MAP } from "./i18n";
 
 const App = () => {
@@ -17,10 +18,7 @@ const App = () => {
 				<AntdApp className="max-lg:hidden">
 					<LeftPanel />
 				</AntdApp>
-				<div
-					className="flex min-h-0 items-end justify-center overflow-auto border-orange-400 border-r border-l border-dashed max-lg:items-stretch max-lg:justify-start max-lg:border-none max-lg:overflow-hidden"
-					id="center"
-				>
+				<div className="flex min-h-0 items-end justify-center overflow-auto border-orange-400 border-r border-l border-dashed max-lg:items-stretch max-lg:justify-start max-lg:border-none max-lg:overflow-hidden" id="center">
 					<div className="border max-lg:w-full max-lg:border-0">
 						<TopPopover>
 							<Screen />
@@ -29,6 +27,7 @@ const App = () => {
 				</div>
 				<RightPanel />
 			</div>
+			<MobileCreatorPanel />
 			<Tour />
 		</ConfigProvider>
 	);

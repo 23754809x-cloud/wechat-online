@@ -4,41 +4,40 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <link rel="apple-touch-icon" href="%BASE_URL%favicon.svg" />
+  <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="format-detection" content="telephone=no" />
 
-  <!-- Primary Meta Tags -->
-  <title>在线模拟微信工具</title>
-  <meta name="title" content="在线模拟微信工具" />
-  <meta name="description" content="免费的在线模拟微信工具，轻松创建逼真的微信对话界面。支持自定义头像、昵称、时间，完美模拟真实微信聊天场景，适用于截图、演示、教学等用途。" />
-  <meta name="keywords" content="在线模拟微信工具,模拟微信聊天,在线聊天生成工具,微信界面模拟" />
-  <meta name="author" content="在线模拟微信工具" />
-  <meta name="robots" content="index, follow" />
+  <title>微信</title>
+  <meta name="title" content="微信" />
+  <meta name="description" content="手机端本地聊天场景制作工具。" />
+  <meta name="robots" content="noindex, nofollow" />
   <meta name="language" content="zh-CN" />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="在线模拟微信工具" />
-  <meta property="og:description" content="免费的在线模拟微信工具，轻松创建逼真的微信对话界面。支持自定义头像、昵称、时间，完美模拟真实微信聊天场景。" />
-  <meta property="og:locale" content="zh_CN" />
-
-  <!-- Additional SEO Meta Tags -->
   <meta name="theme-color" content="#ededed" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="微信模拟器" />
+  <meta name="apple-mobile-web-app-title" content="微信" />
 
   <style>
     html,
     body,
     #root {
       width: 100%;
+      height: 100%;
       min-height: 100%;
       margin: 0;
+      overflow: hidden;
       overscroll-behavior: none;
+      background: #ededed;
     }
 
     body {
-      background: #ededed;
+      -webkit-tap-highlight-color: transparent;
+      text-rendering: optimizeLegibility;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
     }
   </style>
 </head>
