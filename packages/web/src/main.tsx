@@ -6,7 +6,7 @@ import "./i18n";
 import { Provider } from "jotai";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createHashRouter } from "react-router-dom";
 import { initDBImagesCacheStore } from "./db";
 import { routes } from "./router/index.tsx";
 import { mainStore } from "./stateV2/store.ts";
@@ -15,7 +15,8 @@ import { initDayjs } from "./time.ts";
 initDayjs();
 initDBImagesCacheStore();
 
-const router = createBrowserRouter(routes);
+// Hash routing keeps every in-app route reload-safe on static hosts such as GitHub Pages.
+const router = createHashRouter(routes);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
 	<React.StrictMode>
