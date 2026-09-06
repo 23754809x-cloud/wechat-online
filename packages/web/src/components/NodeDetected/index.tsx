@@ -6,6 +6,7 @@ import {
 	hoveredNodeAtom,
 } from "@/stateV2/detectedNode";
 import { nodesAtomsAtom } from "@/stateV2/detectedNode/nodeAtom";
+import { useCompactRuntime } from "@/runtime/compact";
 import { useMergeRefs } from "@floating-ui/react";
 import { useCreation, useUpdateEffect } from "ahooks";
 import { atom, useSetAtom } from "jotai";
@@ -21,7 +22,6 @@ import {
 	useId,
 	useRef,
 } from "react";
-import { isMobileOnly } from "react-device-detect";
 import Sortable from "sortablejs";
 import useMode from "../useMode";
 
@@ -45,6 +45,7 @@ function canBeDetected<T extends object>(
 	) => {
 		const { metaData: injectMetaData, innerRef, id: preId, nodeTreeSort } = props;
 		const id = preId ?? useId();
+		const compact = useCompactRuntime();
 		const currentNodeAtom = useCreation(
 			() =>
 				atom<IStateNode>({
@@ -72,12 +73,15 @@ function canBeDetected<T extends object>(
 			: mapCompared(injectMetaData);
 
 		useEffect(() => {
-			if (divRef.current) {
-				setNodesAtoms((prev) => {
-					prev[id] = currentNodeAtom;
-					return { ...prev };
-				});
-			}
+			// The metadata graph only belongs to the desktop editor. Registering every
+			// visible WeChat node on phones adds work and can leak editor selection state.
+			if (compact || !divRef.current) return;
+
+			setNodesAtoms((prev) => {
+				prev[id] = currentNodeAtom;
+				return { ...prev };
+			});
+
 			return () => {
 				setNodesAtoms((prev) => {
 					delete prev[id];
@@ -87,14 +91,15 @@ function canBeDetected<T extends object>(
 					setActivated(null);
 				}
 			};
-		}, []);
+		}, [compact]);
 
 		useUpdateEffect(() => {
+			if (compact) return;
 			setCurrentNode((pv) => ({
 				...pv,
 				injectMetaData,
 			}));
-		}, [JSON.stringify(comparedInjectMetaData)]);
+		}, [compact, JSON.stringify(comparedInjectMetaData)]);
 
 		const onClick = useCallback((ev: MouseEvent) => {
 			ev.stopPropagation();
@@ -115,10 +120,16 @@ function canBeDetected<T extends object>(
 
 		const fp = omit(props, ["metaData", "innerRef", "nodeTreeSort"]);
 
-		// Phones should behave like the real app, not the desktop metadata editor.
-		// This preserves each component's own click/navigation handlers and prevents
-		// blue selection frames from leaking into the mobile experience.
-		if (isPreview || isMobileOnly) {
+		// Compact devices must preserve each component's native click/navigation
+		// handlers and must not expose metadata ids or editor interception.
+		if (compact) {
+			return component({
+				...(fp as T & HTMLAttributes<void>),
+				ref: innerRef,
+			}) as JSX.Element;
+		}
+
+		if (isPreview) {
 			return component({
 				...(fp as T & HTMLAttributes<void>),
 				ref: mergedRef,

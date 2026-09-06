@@ -1,3 +1,4 @@
+import EMOJI_SPRITE_URL from "@/assets/emoji-sprite.png";
 import { recentUsedEmojiAtom } from "@/stateV2/conversation";
 import { EMOJI_ARRAY } from "@/wechatComponents/SlateText/utils";
 import { useAtomValue } from "jotai";
@@ -11,6 +12,7 @@ type Props = {
 
 const EmojiList = ({ onEmojiClick, className }: Props) => {
 	const recentUsedEmoji = useAtomValue(recentUsedEmojiAtom);
+	const emojiSpriteBackground = `url(${EMOJI_SPRITE_URL})`;
 
 	const recentUseEmojiContent = useMemo(() => {
 		if (recentUsedEmoji.length === 0) return null;
@@ -26,8 +28,7 @@ const EmojiList = ({ onEmojiClick, className }: Props) => {
 								data-key={`${y}-${x}`}
 								className="h-6 w-6 origin-center cursor-pointer bg-no-repeat"
 								style={{
-									backgroundImage:
-										"url(https://cdn-fakeworld.azureedge.net/fakeworld/emoji-sprite.png)",
+									backgroundImage: emojiSpriteBackground,
 									...EMOJI_ARRAY[y][x]!.panel,
 								}}
 							/>
@@ -39,7 +40,7 @@ const EmojiList = ({ onEmojiClick, className }: Props) => {
 				</div>
 			</div>
 		);
-	}, [recentUsedEmoji]);
+	}, [recentUsedEmoji, emojiSpriteBackground]);
 
 	return (
 		<div className={twJoin("flex flex-col overflow-auto bg-[#ECECEC] px-4 pb-8", className)}>
@@ -59,9 +60,7 @@ const EmojiList = ({ onEmojiClick, className }: Props) => {
 											style && "cursor-pointer",
 										)}
 										style={{
-											backgroundImage: style
-												? "url(https://cdn-fakeworld.azureedge.net/fakeworld/emoji-sprite.png)"
-												: undefined,
+											backgroundImage: style ? emojiSpriteBackground : undefined,
 											...style?.panel,
 										}}
 									/>

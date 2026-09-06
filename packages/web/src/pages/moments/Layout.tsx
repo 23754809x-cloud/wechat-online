@@ -5,6 +5,7 @@ import { h } from "@/components/HashAssets";
 import { canBeDetected } from "@/components/NodeDetected";
 import { useMemoScrollPos } from "@/components/useMemoScrollPos";
 import useModeNavigate from "@/components/useModeNavigate";
+import { useCompactRuntime } from "@/runtime/compact";
 import {
 	type TStateStatusBar,
 	getStatusBarValueSnapshot,
@@ -17,7 +18,6 @@ import { useScroll } from "ahooks";
 import { useAtomValue, useSetAtom } from "jotai";
 import { pick } from "lodash-es";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
-import { isDesktop } from "react-device-detect";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router-dom";
 import { CSSTransition, SwitchTransition } from "react-transition-group";
@@ -56,6 +56,7 @@ const MomentsLayout = () => {
 		opacity: 1,
 	});
 	const [bgExpand, setBgExpand] = useState(false);
+	const compact = useCompactRuntime();
 	const navigate = useModeNavigate();
 	const { hide } = useAtomValue(statusBarConfigAtom);
 	const { momentsBackgroundInfo } = useProfile();
@@ -186,7 +187,7 @@ const MomentsLayout = () => {
 			<div
 				className={twJoin(
 					"absolute z-20 grid w-full grid-cols-3 px-4 py-2 text-white",
-					!hide && isDesktop && "mt-10",
+					!hide && !compact && "mt-10",
 					bgExpand && "transition-all duration-300",
 				)}
 				style={{

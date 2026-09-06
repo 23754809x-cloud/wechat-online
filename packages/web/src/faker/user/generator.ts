@@ -1,10 +1,16 @@
+import FRIEND_AVATAR_2 from "@/assets/friend-avatar-2.svg";
+import FRIEND_AVATAR_3 from "@/assets/friend-avatar-3.svg";
+import DEFAULT_FRIEND_AVATAR from "@/assets/friend-avatar-default.svg";
+import DEFAULT_MOMENTS_COVER from "@/assets/moments-cover-default.svg";
 import getFakerInstanceByLang from "@/faker/core";
 import type { IStateProfile } from "@/stateV2/profile";
 import { nanoid } from "nanoid";
 
+const LOCAL_DEMO_AVATARS = [DEFAULT_FRIEND_AVATAR, FRIEND_AVATAR_2, FRIEND_AVATAR_3];
+
 export function randomAvatar() {
 	const faker = getFakerInstanceByLang();
-	return faker.image.avatarGitHub();
+	return faker.helpers.arrayElement(LOCAL_DEMO_AVATARS);
 }
 
 export function randomUserId() {
@@ -40,7 +46,7 @@ export function generateFakeUser(preData: Partial<IStateProfile> = {}): IStatePr
 		privacy: "all",
 		momentsPrivacy: "all",
 		thumbnailInfo: [],
-		momentsBackgroundInfo: faker.image.url(),
+		momentsBackgroundInfo: DEFAULT_MOMENTS_COVER,
 		...preData,
 	};
 }

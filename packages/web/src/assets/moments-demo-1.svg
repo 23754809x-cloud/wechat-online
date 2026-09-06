@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-label="Moments demo image">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d7ddd9"/><stop offset="1" stop-color="#71817c"/></linearGradient></defs>
+  <rect width="900" height="900" fill="url(#g)"/>
+  <circle cx="650" cy="240" r="145" fill="#eef1ee" fill-opacity=".5"/>
+  <path d="M0 700c180-120 340-110 500-180 150-65 260-130 400-112v492H0Z" fill="#31443e" fill-opacity=".35"/>
+</svg>

@@ -1,11 +1,11 @@
 import { canBeDetected } from "@/components/NodeDetected";
+import { useCompactRuntime } from "@/runtime/compact";
 import { inputterValueAtom } from "@/stateV2/conversation";
 import { EMetaDataType } from "@/stateV2/detectedNode";
 import Element from "@/wechatComponents/SlateText/Element";
 import { SLATE_INITIAL_VALUE } from "@/wechatComponents/SlateText/utils";
 import { useSetAtom } from "jotai";
 import { type Dispatch, type SetStateAction, memo, useEffect } from "react";
-import { isMobileOnly } from "react-device-detect";
 import { Editable, ReactEditor, Slate } from "slate-react";
 import { useConversationAPI } from "../../context";
 import { focusFix } from "./utils";
@@ -16,6 +16,7 @@ type Props = {
 };
 
 const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
+	const compact = useCompactRuntime();
 	const {
 		inputEditor: editor,
 		sendTextMessage,
@@ -26,11 +27,11 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 	const setInputValue = useSetAtom(inputterValueAtom);
 
 	useEffect(() => {
-		if (isMobileOnly && mobileInputMode === "text" && previousMobileInputMode === "none") {
+		if (compact && mobileInputMode === "text" && previousMobileInputMode === "none") {
 			focusFix();
 			ReactEditor.focus(editor);
 		}
-	}, [mobileInputMode]);
+	}, [compact, mobileInputMode, previousMobileInputMode, editor]);
 
 	return (
 		<canBeDetected.div
@@ -44,7 +45,7 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 				<Editable
 					id="conversation-input"
 					onFocus={() => {
-						if (isMobileOnly) {
+						if (compact) {
 							scrollConversationListToBtm();
 							if (showEmojiPanel) setShowEmojiPanel?.(false);
 						}
@@ -58,7 +59,7 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 						}
 					}}
 					enterKeyHint="send"
-					inputMode={isMobileOnly ? mobileInputMode : "text"}
+					inputMode={compact ? mobileInputMode : "text"}
 				/>
 			</Slate>
 		</canBeDetected.div>
