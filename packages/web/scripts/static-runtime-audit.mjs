@@ -61,7 +61,11 @@ for (const file of walk(root)) {
 	}
 }
 
-const grouped = Object.groupBy(findings, (item) => item.rule);
+const grouped = findings.reduce((acc, item) => {
+	(acc[item.rule] ??= []).push(item);
+	return acc;
+}, {});
+
 console.log("\n[runtime-audit] static runtime risk inventory");
 for (const rule of rules) {
 	const items = grouped[rule.name] ?? [];
@@ -74,13 +78,19 @@ for (const rule of rules) {
 
 const reportDir = path.resolve("test-results");
 fs.mkdirSync(reportDir, { recursive: true });
-fs.writeFileSync(path.join(reportDir, "static-runtime-audit.json"), JSON.stringify(findings, null, 2));
+fs.writeFileSync(
+	path.join(reportDir, "static-runtime-audit.json"),
+	JSON.stringify(findings, null, 2),
+);
 
 const riskyExternal = findings.filter(
-	(item) => item.rule === "external-runtime-url" && /cdn-fakeworld\.azureedge\.net/i.test(item.match),
+	(item) =>
+		item.rule === "external-runtime-url" && /cdn-fakeworld\.azureedge\.net/i.test(item.match),
 );
 if (riskyExternal.length) {
-	console.error(`\n[runtime-audit] FAIL: ${riskyExternal.length} bundled/default runtime assets still depend on cdn-fakeworld.`);
+	console.error(
+		`\n[runtime-audit] FAIL: ${riskyExternal.length} bundled/default runtime assets still depend on cdn-fakeworld.`,
+	);
 	process.exitCode = 1;
 } else {
 	console.log("\n[runtime-audit] PASS: no cdn-fakeworld runtime dependency remains in src.");
