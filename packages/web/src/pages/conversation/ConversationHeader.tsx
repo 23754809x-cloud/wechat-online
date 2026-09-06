@@ -15,17 +15,15 @@ const ConversationHeader = () => {
 	const navigate = useModeNavigate();
 
 	return (
-		<div className="grid grid-cols-3 border-black/5 border-b bg-[#F5F5F5] px-4 py-2">
+		<div className="grid h-[50px] grid-cols-3 border-black/5 border-b bg-[#EDEDED] px-[16px]">
 			<div className="flex items-center">
 				<BackFilledSVG
 					fill="black"
-					className="h-5 w-5 cursor-pointer"
-					onClick={() => {
-						navigate("/");
-					}}
+					className="h-[22px] w-[22px] cursor-pointer"
+					onClick={() => navigate("/")}
 				/>
-				{
-					unreadCount.count > 0 && (<canBeDetected.div
+				{unreadCount.count > 0 && (
+					<canBeDetected.div
 						className="ml-1 rounded-2xl bg-[rgba(0,0,0,0.15)] px-2 py-[2px] text-xs"
 						metaData={{
 							type: EMetaDataType.UnreadCount,
@@ -33,14 +31,14 @@ const ConversationHeader = () => {
 						}}
 					>
 						{unreadCount.count}
-					</canBeDetected.div>)
-				}
+					</canBeDetected.div>
+				)}
 			</div>
-			<div className="flex items-center justify-center">
+			<div className="flex min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[17px]">
 				{friendProfile?.remark ?? friendProfile?.nickname}
 			</div>
 			<div className="flex items-center justify-end">
-				<MoreFilledSVG fill="black" className="h-5 w-5" />
+				<MoreFilledSVG fill="black" className="h-[24px] w-[24px]" />
 			</div>
 		</div>
 	);

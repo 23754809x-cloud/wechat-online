@@ -13,18 +13,15 @@ const GroupConversationHeader = () => {
 	const groupInfo = useAtomValue(groupAtom(groupId ?? ""));
 	const unreadCount = useAtomValue(unreadCountAtom);
 	const navigate = useModeNavigate();
-
 	if (!groupInfo) return null;
 
 	return (
-		<div className="grid grid-cols-3 border-black/5 border-b bg-[#F5F5F5] px-4 py-2">
+		<div className="grid h-[50px] grid-cols-[72px_minmax(0,1fr)_72px] border-black/5 border-b bg-[#EDEDED] px-[16px]">
 			<div className="flex items-center">
 				<BackFilledSVG
 					fill="black"
-					className="h-5 w-5 cursor-pointer"
-					onClick={() => {
-						navigate("/");
-					}}
+					className="h-[22px] w-[22px] cursor-pointer"
+					onClick={() => navigate("/")}
 				/>
 				{unreadCount.count > 0 && (
 					<canBeDetected.div
@@ -39,7 +36,7 @@ const GroupConversationHeader = () => {
 				)}
 			</div>
 			<canBeDetected.div
-				className="flex items-center justify-center"
+				className="flex min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[17px]"
 				metaData={{
 					type: EMetaDataType.GroupProfile,
 					index: groupId!,
@@ -50,7 +47,7 @@ const GroupConversationHeader = () => {
 				{groupInfo.name}({groupInfo.displayMemberCount ?? groupInfo.memberIds.length})
 			</canBeDetected.div>
 			<div className="flex items-center justify-end">
-				<MoreFilledSVG fill="black" className="h-5 w-5" />
+				<MoreFilledSVG fill="black" className="h-[24px] w-[24px]" />
 			</div>
 		</div>
 	);

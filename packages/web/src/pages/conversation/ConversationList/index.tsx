@@ -26,18 +26,15 @@ const ConversationList = () => {
 	const { isEdit } = useMode();
 	const rebuildTree = useSetAtom(allNodesTreeAtom);
 
-	const mappedSortableListData = useMemo(() => {
-		return conversationList.map((item) => ({
-			id: item.id,
-		}));
-	}, [conversationList]);
+	const mappedSortableListData = useMemo(
+		() => conversationList.map((item) => ({ id: item.id })),
+		[conversationList],
+	);
 
 	const handleOperationDelete = (id: TConversationItem["id"]) => {
 		Modal.confirm({
 			title: "是否删除该聊天记录？",
-			onOk: () => {
-				setConversationList((prev) => prev.filter((v) => v.id !== id));
-			},
+			onOk: () => setConversationList((prev) => prev.filter((v) => v.id !== id)),
 		});
 	};
 
@@ -76,7 +73,7 @@ const ConversationList = () => {
 
 	return (
 		<canBeDetected.div
-			className="flex flex-1 flex-col-reverse overflow-auto bg-[#F5F5F5] p-3"
+			className="flex flex-1 flex-col-reverse overflow-auto bg-[#EDEDED] px-3 py-[14px]"
 			metaData={{
 				type: EMetaDataType.ConversationList,
 				index: conversationId,
@@ -97,10 +94,8 @@ const ConversationList = () => {
 						}
 					}
 				}}
-				className="mb-auto space-y-4"
-				onSort={() => {
-					rebuildTree();
-				}}
+				className="mb-auto space-y-[16px]"
+				onSort={() => rebuildTree()}
 			>
 				{conversationList.map((item) => {
 					const operations: StaticMetaData.InjectMetaData["operations"] = [
@@ -137,20 +132,14 @@ const ConversationList = () => {
 					}
 					return (
 						<canBeDetected.div
-							className={twJoin(
-								"group flex flex-col",
-								item.role,
-								isEdit && "cursor-grab",
-							)}
+							className={twJoin("group flex flex-col", item.role, isEdit && "cursor-grab")}
 							key={item.id}
 							metaData={[
 								{
 									type: EMetaDataType.ConversationItem,
 									index: [conversationId, item.id],
 									treeItemDisplayName: (data) =>
-										`消息（${ConversationTypeLabel[data.type]}${
-											data.role ? `-${data.role}` : ""
-										}）`,
+										`消息（${ConversationTypeLabel[data.type]}${data.role ? `-${data.role}` : ""}）`,
 									operations,
 									label: "单个消息",
 								},
@@ -163,10 +152,7 @@ const ConversationList = () => {
 												label: "好友个人信息",
 											},
 										]),
-								{
-									type: EMetaDataType.MyProfile,
-									label: "个人信息",
-								},
+								{ type: EMetaDataType.MyProfile, label: "个人信息" },
 							]}
 							nodeTreeSort
 							data-conversation-id={item.id}
