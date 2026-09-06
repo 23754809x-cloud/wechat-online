@@ -62,7 +62,8 @@ for (const file of walk(root)) {
 }
 
 const grouped = findings.reduce((acc, item) => {
-	(acc[item.rule] ??= []).push(item);
+	if (!acc[item.rule]) acc[item.rule] = [];
+	acc[item.rule].push(item);
 	return acc;
 }, {});
 
@@ -85,13 +86,17 @@ fs.writeFileSync(
 
 const riskyExternal = findings.filter(
 	(item) =>
-		item.rule === "external-runtime-url" && /cdn-fakeworld\.azureedge\.net/i.test(item.match),
+		item.rule === "external-runtime-url" &&
+		!item.file.startsWith("src/migrations/") &&
+		/cdn-fakeworld\.azureedge\.net/i.test(item.match),
 );
 if (riskyExternal.length) {
 	console.error(
-		`\n[runtime-audit] FAIL: ${riskyExternal.length} bundled/default runtime assets still depend on cdn-fakeworld.`,
+		`\n[runtime-audit] FAIL: ${riskyExternal.length} live runtime assets still depend on cdn-fakeworld.`,
 	);
 	process.exitCode = 1;
 } else {
-	console.log("\n[runtime-audit] PASS: no cdn-fakeworld runtime dependency remains in src.");
+	console.log(
+		"\n[runtime-audit] PASS: no live UI/runtime component depends on cdn-fakeworld; migration literals are allowed.",
+	);
 }
