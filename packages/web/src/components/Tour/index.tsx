@@ -1,3 +1,4 @@
+import { useCompactRuntime } from "@/runtime/compact";
 import { EMenus, activatedMenuAtom } from "@/stateV2/activatedMenu";
 import { modeAtom } from "@/stateV2/mode";
 import { tourTargetAtom, touredAtom } from "@/stateV2/tour";
@@ -15,9 +16,13 @@ const Tour = () => {
 	const setMenu = useSetAtom(activatedMenuAtom);
 	const setMode = useSetAtom(modeAtom);
 	const { t } = useTranslation();
-	const [inViewport] = useInViewport(document.getElementById("left-panel") as HTMLElement);
+	const compact = useCompactRuntime();
+	const leftPanel = typeof document === "undefined" ? null : document.getElementById("left-panel");
+	const [inViewport] = useInViewport(leftPanel as HTMLElement | null);
 
-	if (!inViewport) return null;
+	// This tour teaches the desktop metadata editor. It has no valid targets on
+	// phones and used to leak overlay UI into mobile preview sessions.
+	if (compact || !inViewport) return null;
 
 	return (
 		<AntdTour
