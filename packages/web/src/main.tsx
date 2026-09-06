@@ -8,10 +8,12 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createHashRouter } from "react-router-dom";
 import { initDBImagesCacheStore } from "./db";
+import { migrateLegacyStorageOnce } from "./migrations/storage";
 import { routes } from "./router/index.tsx";
 import { mainStore } from "./stateV2/store.ts";
 import { initDayjs } from "./time.ts";
 
+migrateLegacyStorageOnce();
 initDayjs();
 initDBImagesCacheStore();
 
