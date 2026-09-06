@@ -85,3 +85,18 @@ jobs:
             packages/web/test-results/static-runtime-audit.json
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Upload source audit snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-audit-snapshot
+          path: |
+            packages/web/src
+            packages/web/scripts
+            packages/web/package.json
+            packages/web/vite.config.ts
+            package.json
+            pnpm-workspace.yaml
+          if-no-files-found: error
+          retention-days: 2
