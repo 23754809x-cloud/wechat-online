@@ -3,8 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
   <!-- Primary Meta Tags -->
   <title>在线模拟微信工具</title>
@@ -17,65 +17,33 @@
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://wechat.caterpillar-soft.com/" />
   <meta property="og:title" content="在线模拟微信工具" />
   <meta property="og:description" content="免费的在线模拟微信工具，轻松创建逼真的微信对话界面。支持自定义头像、昵称、时间，完美模拟真实微信聊天场景。" />
-  <meta property="og:image" content="https://wechat.caterpillar-soft.com/og-image.png" />
   <meta property="og:locale" content="zh_CN" />
 
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="https://wechat.caterpillar-soft.com/" />
-  <meta property="twitter:title" content="在线模拟微信工具" />
-  <meta property="twitter:description" content="免费的在线模拟微信工具，轻松创建逼真的微信对话界面。支持自定义头像、昵称、时间，完美模拟真实微信聊天场景。" />
-  <meta property="twitter:image" content="https://wechat.caterpillar-soft.com/og-image.png" />
-
   <!-- Additional SEO Meta Tags -->
-  <link rel="canonical" href="https://wechat.caterpillar-soft.com/" />
-  <meta name="theme-color" content="#1aad19" />
+  <meta name="theme-color" content="#ededed" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="在线模拟微信工具" />
+  <meta name="apple-mobile-web-app-title" content="微信模拟器" />
 
-  <!-- google adsense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4002926826632458"
-    crossorigin="anonymous"></script>
-
-  <!-- google analytics -->
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G58WJT323F"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-
-    gtag('config', 'G-G58WJT323F');
-  </script>
-
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "在线模拟微信工具",
-      "description": "免费的在线模拟微信工具，轻松创建逼真的微信对话界面",
-      "url": "https://wechat.caterpillar-soft.com/",
-      "applicationCategory": "UtilityApplication",
-      "operatingSystem": "Web Browser",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "CNY"
-      },
-      "creator": {
-        "@type": "Organization",
-        "name": "Chat History Generator"
-      }
+  <style>
+    html,
+    body,
+    #root {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      overscroll-behavior: none;
     }
-    </script>
+
+    body {
+      background: #ededed;
+    }
+  </style>
 </head>
 
-<body class="m-0 p-0">
+<body>
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

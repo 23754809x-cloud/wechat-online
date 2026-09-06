@@ -13,15 +13,15 @@ const App = () => {
 
 	return (
 		<ConfigProvider locale={ANTD_LANG_MAP[i18n.language as keyof typeof ANTD_LANG_MAP]}>
-			<div className="grid h-screen grid-cols-3 overflow-hidden max-lg:grid-cols-1">
+			<div className="grid h-screen grid-cols-3 overflow-hidden max-lg:h-[100dvh] max-lg:grid-cols-1">
 				<AntdApp className="max-lg:hidden">
 					<LeftPanel />
 				</AntdApp>
 				<div
-					className="flex min-h-0 items-end justify-center overflow-auto border-orange-400 border-r border-l border-dashed max-lg:border-none"
+					className="flex min-h-0 items-end justify-center overflow-auto border-orange-400 border-r border-l border-dashed max-lg:items-stretch max-lg:justify-start max-lg:border-none max-lg:overflow-hidden"
 					id="center"
 				>
-					<div className="border">
+					<div className="border max-lg:w-full max-lg:border-0">
 						<TopPopover>
 							<Screen />
 						</TopPopover>

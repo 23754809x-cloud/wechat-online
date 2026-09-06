@@ -21,6 +21,7 @@ import {
 	useId,
 	useRef,
 } from "react";
+import { isMobileOnly } from "react-device-detect";
 import Sortable from "sortablejs";
 import useMode from "../useMode";
 
@@ -114,7 +115,10 @@ function canBeDetected<T extends object>(
 
 		const fp = omit(props, ["metaData", "innerRef", "nodeTreeSort"]);
 
-		if (isPreview) {
+		// Phones should behave like the real app, not the desktop metadata editor.
+		// This preserves each component's own click/navigation handlers and prevents
+		// blue selection frames from leaking into the mobile experience.
+		if (isPreview || isMobileOnly) {
 			return component({
 				...(fp as T & HTMLAttributes<void>),
 				ref: mergedRef,
