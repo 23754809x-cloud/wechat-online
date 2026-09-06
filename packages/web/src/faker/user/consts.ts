@@ -1,6 +1,8 @@
-import type { IStateProfile, TStateAllProfiles } from "@/stateV2/profile";
 import CATERPILLAR_AVATAR from "@/assets/caterpillar-avatar.jpg";
+import DEFAULT_FRIEND_AVATAR from "@/assets/friend-avatar-default.svg";
 import MEI_AVATAR from "@/assets/mei-avatar.jpg";
+import DEFAULT_MOMENTS_COVER from "@/assets/moments-cover-default.svg";
+import type { IStateProfile, TStateAllProfiles } from "@/stateV2/profile";
 
 export const MYSELF_ID = "0";
 
@@ -10,7 +12,7 @@ export const INIT_MY_PROFILE: IStateProfile = {
 	avatarInfo: CATERPILLAR_AVATAR,
 	wechat: "*",
 	gender: "male",
-	momentsBackgroundInfo: "https://cdn-fakeworld.azureedge.net/fakeworld/pnqqk6.jpg",
+	momentsBackgroundInfo: DEFAULT_MOMENTS_COVER,
 	momentsPrivacy: "all",
 	thumbnailInfo: [],
 	momentsBackgroundLike: false,
@@ -31,7 +33,7 @@ export const INIT_FRIENDS: TStateAllProfiles = [
 		gender: "female",
 		privacy: "all",
 		thumbnailInfo: [],
-		momentsBackgroundInfo: "https://cdn-fakeworld.azureedge.net/fakeworld/pnqz5x.jpg",
+		momentsBackgroundInfo: DEFAULT_MOMENTS_COVER,
 		momentsBackgroundLike: false,
 		momentsPrivacy: "all",
 		signature: "Cr",
@@ -41,11 +43,11 @@ export const INIT_FRIENDS: TStateAllProfiles = [
 	{
 		id: "2",
 		nickname: "星之笨比",
-		avatarInfo: "https://cdn-fakeworld.azureedge.net/fakeworld/ppf1ga.jpg",
+		avatarInfo: DEFAULT_FRIEND_AVATAR,
 		wechat: "*",
 		privacy: "all",
 		thumbnailInfo: [],
-		momentsBackgroundInfo: "https://cdn-fakeworld.azureedge.net/fakeworld/pnqz5x.jpg",
+		momentsBackgroundInfo: DEFAULT_MOMENTS_COVER,
 		momentsBackgroundLike: false,
 		momentsPrivacy: "all",
 	},
