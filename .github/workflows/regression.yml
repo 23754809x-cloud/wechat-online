@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - chatgpt/full-regression-audit
+      - camera-realistic-mode-v2
   pull_request:
     branches:
       - main
