@@ -18,11 +18,10 @@ const Fallback = (props: FallbackProps) => {
 			okText="重新加载"
 			onOk={() => {
 				props.resetErrorBoundary?.();
-				localStorage.clear();
 				location.reload();
 			}}
 		>
-			<div>点击下方按钮清除缓存数据重新加载应用</div>
+			<div>应用运行出现异常。重新加载不会删除聊天记录、本地设置或 IndexedDB 素材。</div>
 			<div>
 				如果一直出现该提示，请联系
 				<Button type="link" href="mailto:liangniangbaby@gmail.com" target="_blank" className="px-0">
