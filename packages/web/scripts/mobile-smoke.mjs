@@ -4,6 +4,7 @@ import { chromium } from "playwright";
 
 const baseURL = process.env.APP_URL || "http://127.0.0.1:4173/wechat-online/";
 const outputDir = process.env.TEST_OUTPUT || path.resolve("test-results/mobile");
+const persistenceMessage = "回归测试消息-刷新后必须保留";
 fs.mkdirSync(outputDir, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
@@ -61,14 +62,32 @@ async function commonChecks(name) {
 		metadataNodes: document.querySelectorAll("[nd-id]").length,
 	}));
 
-	assert(!/(?:wechatPage|routerLabel|quickJump|menu|base)\.[A-Za-z0-9_.-]+/.test(state.bodyText), `${name}: raw i18n key leaked into UI`);
-	assert(state.documentWidth <= state.innerWidth + 2, `${name}: document horizontal overflow ${state.documentWidth} > ${state.innerWidth}`);
-	assert(state.bodyWidth <= state.innerWidth + 2, `${name}: body horizontal overflow ${state.bodyWidth} > ${state.innerWidth}`);
-	assert(Math.abs(state.rootWidth - state.innerWidth) <= 2, `${name}: #root width ${state.rootWidth} does not match viewport ${state.innerWidth}`);
+	assert(
+		!/(?:wechatPage|routerLabel|quickJump|menu|base)\.[A-Za-z0-9_.-]+/.test(state.bodyText),
+		`${name}: raw i18n key leaked into UI`,
+	);
+	assert(
+		state.documentWidth <= state.innerWidth + 2,
+		`${name}: document horizontal overflow ${state.documentWidth} > ${state.innerWidth}`,
+	);
+	assert(
+		state.bodyWidth <= state.innerWidth + 2,
+		`${name}: body horizontal overflow ${state.bodyWidth} > ${state.innerWidth}`,
+	);
+	assert(
+		Math.abs(state.rootWidth - state.innerWidth) <= 2,
+		`${name}: #root width ${state.rootWidth} does not match viewport ${state.innerWidth}`,
+	);
 	assert(state.screen, `${name}: #screen missing`);
 	assert(Math.abs(state.screen.width - state.innerWidth) <= 2, `${name}: screen width mismatch`);
-	assert(state.metadataNodes === 0, `${name}: ${state.metadataNodes} desktop metadata nodes leaked into compact runtime`);
-	assert(!state.bodyText.includes("iPad 微信已登录"), `${name}: desktop/iPad login row visible on phone`);
+	assert(
+		state.metadataNodes === 0,
+		`${name}: ${state.metadataNodes} desktop metadata nodes leaked into compact runtime`,
+	);
+	assert(
+		!state.bodyText.includes("iPad 微信已登录"),
+		`${name}: desktop/iPad login row visible on phone`,
+	);
 
 	await page.screenshot({ path: path.join(outputDir, `${name}.png`), fullPage: true });
 }
@@ -83,16 +102,23 @@ try {
 	await commonChecks("01-home");
 
 	for (const label of ["微信", "通讯录", "发现", "我"]) {
-		assert((await page.getByText(label, { exact: true }).count()) > 0, `home: missing bottom nav label ${label}`);
+		assert(
+			(await page.getByText(label, { exact: true }).count()) > 0,
+			`home: missing bottom nav label ${label}`,
+		);
 	}
 
 	await page.getByText("通讯录", { exact: true }).last().click();
 	await page.waitForFunction(() => location.hash.includes("/contacts"));
 	await commonChecks("02-contacts");
-
-	// The mobile add-friend icon must not silently switch the hidden desktop editor on.
-	const contactHeaderButtons = page.locator("svg").filter({ has: page.locator("path") });
-	void contactHeaderButtons;
+	assert(
+		(await page.getByText("毛毛虫", { exact: true }).count()) === 0,
+		"contacts: current user's own profile leaked into the friends directory",
+	);
+	assert(
+		(await page.getByText("唐吉诃德", { exact: true }).count()) > 0,
+		"contacts: expected friend missing",
+	);
 
 	await page.getByText("唐吉诃德", { exact: true }).last().click();
 	await page.waitForFunction(() => location.hash.includes("/friend/"));
@@ -114,27 +140,41 @@ try {
 	await commonChecks("09-wallet");
 
 	await goHash("/conversation/1", "10-private-chat");
+	const input = page.locator("#conversation-input");
+	await input.click();
+	await page.keyboard.type(persistenceMessage);
+	await page.keyboard.press("Enter");
+	await page.getByText(persistenceMessage, { exact: true }).waitFor({ state: "visible" });
+	await commonChecks("11-private-chat-after-send");
 	await page.reload({ waitUntil: "domcontentloaded" });
-	await commonChecks("11-private-chat-reload");
+	await page.getByText(persistenceMessage, { exact: true }).waitFor({ state: "visible" });
+	await commonChecks("12-private-chat-persisted");
 
-	await goHash("/", "12-home-return");
+	await goHash("/", "13-home-return");
 	await page.getByText("开发组(3)", { exact: true }).click();
 	await page.waitForFunction(() => location.hash.includes("/group-conversation/"));
-	await commonChecks("13-group-chat");
+	await commonChecks("14-group-chat");
 	await page.reload({ waitUntil: "domcontentloaded" });
-	await commonChecks("14-group-chat-reload");
+	await commonChecks("15-group-chat-reload");
 
-	await goHash("/my/profile-edit", "15-profile-edit");
-	await goHash("/wallet/balance", "16-balance");
+	await goHash("/my/profile-edit", "16-profile-edit");
+	await goHash("/wallet/balance", "17-balance");
 
-	assert(failedSameOriginResponses.length === 0, `same-origin HTTP failures:\n${failedSameOriginResponses.join("\n")}`);
+	assert(
+		failedSameOriginResponses.length === 0,
+		`same-origin HTTP failures:\n${failedSameOriginResponses.join("\n")}`,
+	);
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
-	console.log("[mobile-smoke] OK: 16 route/state checks passed at 430x932.");
+	console.log(
+		"[mobile-smoke] OK: 17 route/state checks plus send-and-reload persistence passed at 430x932.",
+	);
 } catch (error) {
 	console.error("[mobile-smoke] FAILED", error);
 	if (failedSameOriginResponses.length) console.error(failedSameOriginResponses.join("\n"));
 	if (runtimeErrors.length) console.error(runtimeErrors.join("\n"));
-	await page.screenshot({ path: path.join(outputDir, "failure.png"), fullPage: true }).catch(() => {});
+	await page
+		.screenshot({ path: path.join(outputDir, "failure.png"), fullPage: true })
+		.catch(() => {});
 	process.exitCode = 1;
 } finally {
 	await context.close();
