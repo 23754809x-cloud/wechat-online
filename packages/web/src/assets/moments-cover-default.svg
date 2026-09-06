@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="Default Moments cover">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#61756f"/>
+      <stop offset="0.48" stop-color="#8da09a"/>
+      <stop offset="1" stop-color="#3c4d49"/>
+    </linearGradient>
+    <radialGradient id="r" cx="72%" cy="24%" r="58%">
+      <stop offset="0" stop-color="#d7dfdc" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#d7dfdc" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g)"/>
+  <rect width="1200" height="800" fill="url(#r)"/>
+  <path d="M0 620 C230 520 390 560 590 500 C770 447 930 365 1200 398 L1200 800 L0 800 Z" fill="#23332f" fill-opacity="0.28"/>
+  <path d="M0 690 C250 610 470 655 710 575 C875 520 1030 492 1200 520 L1200 800 L0 800 Z" fill="#1e2b28" fill-opacity="0.34"/>
+</svg>
