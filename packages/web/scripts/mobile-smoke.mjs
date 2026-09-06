@@ -51,6 +51,10 @@ async function settle() {
 	await page.waitForTimeout(450);
 }
 
+async function clickVisibleModalPrimaryButton() {
+	await page.locator(".ant-modal:visible .ant-modal-footer .ant-btn-primary").last().click();
+}
+
 async function commonChecks(name) {
 	await settle();
 	const state = await page.evaluate(() => ({
@@ -144,7 +148,7 @@ try {
 
 	await page.getByRole("button", { name: "添加朋友" }).click();
 	await page.getByLabel("联系人昵称").fill(addedFriendName);
-	await page.getByRole("button", { name: "添加", exact: true }).click();
+	await clickVisibleModalPrimaryButton();
 	await page.getByText(addedFriendName, { exact: true }).waitFor({ state: "visible" });
 	await page.reload({ waitUntil: "domcontentloaded" });
 	await page.getByText(addedFriendName, { exact: true }).waitFor({ state: "visible" });
@@ -160,7 +164,10 @@ try {
 	await page.getByText("朋友圈", { exact: true }).first().click();
 	await page.waitForFunction(() => location.hash.includes("/moments"));
 	for (const name of ["唐吉诃德", "星之笨比", "路易吉", "马里奥"]) {
-		assert((await page.getByText(name, { exact: true }).count()) > 0, `moments: missing built-in feed user ${name}`);
+		assert(
+			(await page.getByText(name, { exact: true }).count()) > 0,
+			`moments: missing built-in feed user ${name}`,
+		);
 	}
 	await commonChecks("07-moments");
 
@@ -192,9 +199,10 @@ try {
 	await goHash("/conversation/1", "15-private-chat-creator");
 	await page.getByRole("button", { name: "表情" }).click();
 	await page.getByText("所有表情", { exact: true }).waitFor({ state: "visible" });
-	const emojiBackground = await page.locator('[data-key="0-0"]').first().evaluate((node) =>
-		getComputedStyle(node).backgroundImage,
-	);
+	const emojiBackground = await page
+		.locator('[data-key="0-0"]')
+		.first()
+		.evaluate((node) => getComputedStyle(node).backgroundImage);
 	assert(!emojiBackground.includes("cdn-fakeworld"), "emoji panel still uses legacy CDN sprite");
 	assert(emojiBackground.includes("emoji-sprite"), "emoji panel is not using bundled sprite asset");
 	await page.getByRole("button", { name: "返回键盘" }).click();
@@ -209,7 +217,7 @@ try {
 	}
 	await page.getByRole("button", { name: "语音", exact: true }).click();
 	await page.getByLabel("语音时长").fill("7");
-	await page.getByRole("button", { name: "添加", exact: true }).click();
+	await clickVisibleModalPrimaryButton();
 	await page.getByText("7''", { exact: true }).waitFor({ state: "visible" });
 	await commonChecks("16-mobile-creator-voice");
 
