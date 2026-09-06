@@ -40,24 +40,16 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 				type: EMetaDataType.ConversationInput,
 			}}
 		>
-			<Slate
-				editor={editor}
-				initialValue={SLATE_INITIAL_VALUE}
-				onChange={(v) => {
-					setInputValue(v);
-				}}
-			>
+			<Slate editor={editor} initialValue={SLATE_INITIAL_VALUE} onChange={(v) => setInputValue(v)}>
 				<Editable
 					id="conversation-input"
 					onFocus={() => {
 						if (isMobileOnly) {
 							scrollConversationListToBtm();
-							if (showEmojiPanel) {
-								setShowEmojiPanel?.(false);
-							}
+							if (showEmojiPanel) setShowEmojiPanel?.(false);
 						}
 					}}
-					className="rounded bg-white px-2 py-1 caret-wechatBrand-3 focus:outline-none"
+					className="min-h-[42px] rounded-[5px] bg-white px-[11px] py-[8px] text-[17px] leading-[24px] caret-wechatBrand-3 focus:outline-none"
 					renderElement={(props) => <Element {...props} />}
 					onKeyDown={(ev) => {
 						if (ev.key === "Enter") {
