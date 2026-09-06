@@ -61,11 +61,13 @@ const CommonBlock = <P extends AnyObject>({
 
 	return (
 		<>
-			{upperText && <div className="m-auto text-black/50 text-xs">{upperText}</div>}
+			{upperText && (
+				<div className="m-auto py-[2px] text-[#A5A5A5] text-[15px] leading-[20px]">{upperText}</div>
+			)}
 			<div className="flex flex-col group-[.mine]:items-end group-[.friend]:items-start">
 				<div
 					className={twMerge(
-						"relative flex max-w-[85%] items-start space-x-3 group-[.mine]:ml-auto group-[.mine]:flex-row-reverse group-[.mine]:space-x-reverse",
+						"relative flex max-w-[85%] items-start space-x-2 group-[.mine]:ml-auto group-[.mine]:flex-row-reverse group-[.mine]:space-x-reverse",
 						blockClassName,
 					)}
 					style={blockStyle}
@@ -74,14 +76,16 @@ const CommonBlock = <P extends AnyObject>({
 					<h.img
 						src={avatarInfo}
 						className={twJoin(
-							"h-10 w-10 min-w-10 cursor-pointer rounded object-cover object-center",
+							"h-10 w-10 min-w-10 cursor-pointer rounded-[4px] object-cover object-center",
 							hideAvatar && "invisible",
 						)}
 						onClick={debouncedHandleClick}
 					/>
 					<div className="min-w-0">
 						{isGroupChat && senderId !== MYSELF_ID && !hideSenderName && (
-							<div className="mb-1 text-gray-400 text-xs">{remark ?? nickname}</div>
+							<div className="mb-[3px] pl-[1px] text-[#A5A5A5] text-[12px] leading-[15px]">
+								{remark ?? nickname}
+							</div>
 						)}
 						<canBeDetected.div
 							css={css`
@@ -90,7 +94,7 @@ const CommonBlock = <P extends AnyObject>({
             }
           `}
 							className={twMerge(
-								"group-[.friend]:before:-left-[1px] group-[.mine]:before:-right-[1px] group-[.mine]:before:-rotate-[135deg] relative max-w-full break-words rounded p-[10px] before:absolute before:top-[6px] before:h-7 before:w-7 before:rounded-sm group-[.friend]:before:rotate-45",
+								"group-[.friend]:before:-left-[1px] group-[.mine]:before:-right-[1px] group-[.mine]:before:-rotate-[135deg] relative max-w-full break-words rounded-[5px] px-[12px] py-[9px] before:absolute before:top-[6px] before:h-7 before:w-7 before:rounded-sm group-[.friend]:before:rotate-45",
 								innerBlockClassName,
 							)}
 							{...(innerBlockProps as P)}
