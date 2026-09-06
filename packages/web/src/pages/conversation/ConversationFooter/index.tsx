@@ -21,36 +21,30 @@ const ConversationFooter = () => {
 	const [showEmojiPanel, setShowEmojiPanel] = useState(false);
 	const setMode = useSetAtom(modeAtom);
 	const setActivatedNode = useSetAtom(activatedNodeAtom);
-
-	const inputComponentProps = isMobileOnly
-		? {
-				showEmojiPanel,
-				setShowEmojiPanel,
-			}
-		: {};
+	const inputComponentProps = isMobileOnly ? { showEmojiPanel, setShowEmojiPanel } : {};
 
 	return (
 		<div className="flex flex-col">
-			<div className="flex flex-col border-t bg-[#F6F6F6] p-2">
-				<div className="flex w-full items-end space-x-2">
-					<VoiceSVG fill="#000" className="h-8 w-8" />
+			<div className="flex flex-col border-black/5 border-t bg-[#F6F6F6] px-[10px] py-[7px]">
+				<div className="flex min-h-[42px] w-full items-end space-x-[8px]">
+					<VoiceSVG fill="#000" className="mb-[5px] h-[32px] w-[32px] shrink-0" />
 					<Input {...inputComponentProps} />
 					{showEmojiPanel ? (
 						<KeyboardOutlinedSVG
 							fill="#000"
-							className="h-8 w-8 cursor-pointer"
+							className="mb-[5px] h-[32px] w-[32px] shrink-0 cursor-pointer"
 							onClick={() => setShowEmojiPanel((v) => !v)}
 						/>
 					) : (
 						<StickerOutlinedSVG
 							fill="#000"
-							className="h-8 w-8 cursor-pointer"
+							className="mb-[5px] h-[32px] w-[32px] shrink-0 cursor-pointer"
 							onClick={() => setShowEmojiPanel((v) => !v)}
 						/>
 					)}
 					<Add2OutlinedSVG
 						fill="#000"
-						className="h-8 w-8 cursor-pointer"
+						className="mb-[5px] h-[32px] w-[32px] shrink-0 cursor-pointer"
 						onClick={() => {
 							setMode("edit");
 							const nodesAtoms = getNodesAtomsValueSnapshot();
