@@ -76,6 +76,13 @@ jobs:
           TEST_OUTPUT: test-results/mobile
         run: node scripts/mobile-smoke.mjs
 
+      - name: Camera mode creator regression
+        working-directory: packages/web
+        env:
+          APP_URL: http://127.0.0.1:4173/wechat-online/
+          TEST_OUTPUT: test-results/camera-mode
+        run: node scripts/camera-mode-smoke.mjs
+
       - name: Upload regression artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -83,6 +90,7 @@ jobs:
           name: full-regression-artifacts
           path: |
             packages/web/test-results/mobile
+            packages/web/test-results/camera-mode
             packages/web/test-results/static-runtime-audit.json
           if-no-files-found: ignore
           retention-days: 7
@@ -97,6 +105,7 @@ jobs:
             packages/web/scripts
             packages/web/package.json
             packages/web/vite.config.ts
+            packages/web/public/manifest.webmanifest
             package.json
             pnpm-workspace.yaml
           if-no-files-found: error
