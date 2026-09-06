@@ -1,3 +1,4 @@
+import { isCompactRuntimeSnapshot } from "@/runtime/compact";
 import { getModeValueSnapshot } from "@/stateV2/mode";
 import { showToast } from "@/wechatComponents/Toast";
 import { noop } from "lodash-es";
@@ -17,7 +18,10 @@ export default function useModeNavigate(options?: Options): NavigateFunction {
 
 	const navigate = useCallback(
 		(...args: Parameters<NavigateFunction>) => {
-			if (getModeValueSnapshot() === "edit") {
+			// Edit mode is a desktop authoring concern. Phones and compact touch
+			// runtimes must remain navigable even if a desktop editing action left the
+			// shared in-memory mode flag set to "edit".
+			if (getModeValueSnapshot() === "edit" && !isCompactRuntimeSnapshot()) {
 				!silence &&
 					showToast({
 						type: "error",
@@ -27,7 +31,7 @@ export default function useModeNavigate(options?: Options): NavigateFunction {
 			}
 			return baseNavigate(...args);
 		},
-		[i18n.language],
+		[i18n.language, errorMsg, silence, baseNavigate],
 	);
 
 	return navigate as NavigateFunction;
