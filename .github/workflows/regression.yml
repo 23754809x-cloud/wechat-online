@@ -42,6 +42,10 @@ jobs:
       - name: Translation audit
         run: node packages/web/scripts/i18n-audit.mjs
 
+      - name: Static runtime audit
+        working-directory: packages/web
+        run: node scripts/static-runtime-audit.mjs
+
       - name: Production build
         run: pnpm build
 
@@ -71,11 +75,13 @@ jobs:
           TEST_OUTPUT: test-results/mobile
         run: node scripts/mobile-smoke.mjs
 
-      - name: Upload mobile regression screenshots
+      - name: Upload regression artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-regression-screenshots
-          path: packages/web/test-results/mobile
+          name: full-regression-artifacts
+          path: |
+            packages/web/test-results/mobile
+            packages/web/test-results/static-runtime-audit.json
           if-no-files-found: ignore
           retention-days: 7
