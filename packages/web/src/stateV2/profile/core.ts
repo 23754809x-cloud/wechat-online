@@ -66,17 +66,20 @@ export const myProfileAtom = focusAtom(allProfilesAtom, (optic) =>
 export const getMyProfileValueSnapshot = () => mainStore.get(myProfileAtom);
 
 /**
- * 用于通讯录界面的锚点数据
+ * 用于通讯录界面的锚点数据。
+ * allProfiles 同时保存“我”和好友，但真实微信通讯录不能把当前用户本人列入好友列表。
  */
 export const allProfilesAnchorDataAtom = atom<Promise<ReturnType<typeof generateNameAnchorGroup>>>(
 	(get) => {
-		const payload = get(allProfilesDEqualCompareAtom).map((v) => ({
-			id: v.id,
-			name: v.remark ?? v.nickname,
-			description: v.description,
-			isStarred: v.isStarred,
-			avatarInfo: v.avatarInfo,
-		}));
+		const payload = get(allProfilesDEqualCompareAtom)
+			.filter((v) => v.id !== MYSELF_ID)
+			.map((v) => ({
+				id: v.id,
+				name: v.remark ?? v.nickname,
+				description: v.description,
+				isStarred: v.isStarred,
+				avatarInfo: v.avatarInfo,
+			}));
 		return new Promise((resolve) => {
 			debounceGenerateNameAnchorGroup(payload, resolve);
 		});
