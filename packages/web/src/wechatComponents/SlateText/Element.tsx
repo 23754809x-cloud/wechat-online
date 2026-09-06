@@ -1,7 +1,7 @@
+import emojiSpriteUrl from "@/assets/emoji-sprite.png";
+import type { CustomElementEmoji } from "@/vite-env";
 import { type RenderElementProps, useSelected } from "slate-react";
 import { twJoin, twMerge } from "tailwind-merge";
-
-import type { CustomElementEmoji } from "@/vite-env";
 
 import { EMOJI_ARRAY } from "./utils";
 
@@ -39,7 +39,7 @@ export const EmojiElement = (props: ElementProps) => {
 				classNames?.emojiInnerClassName,
 			)}
 			style={{
-				backgroundImage: "url(https://cdn-fakeworld.azureedge.net/fakeworld/emoji-sprite.png)",
+				backgroundImage: `url(${emojiSpriteUrl})`,
 				...EMOJI_ARRAY[y][x]?.preview,
 			}}
 			data-playwright-selected={selected}
