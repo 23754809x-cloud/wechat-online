@@ -27,6 +27,7 @@ img {
 .wechat-camera-mode body *:not(input):not(textarea):not([contenteditable="true"]) {
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .wechat-camera-mode input,
@@ -34,4 +35,28 @@ img {
 .wechat-camera-mode [contenteditable="true"] {
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* The creator is opened by a long press. Keep that gesture from leaving an iOS
+   text-selection highlight behind when the overlay appears under the finger. */
+[data-testid="mobile-creator-center"],
+[data-testid="mobile-creator-center"] button,
+[data-testid="mobile-creator-center"] header {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Phone controls should remain comfortably tappable on narrow Android devices. */
+[data-testid="mobile-creator-center"] button,
+[data-testid="mobile-creator-panel"] button {
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+/* Let the inline creator panel follow the popup height instead of forcing 350px. */
+[data-testid="mobile-creator-panel"] {
+  height: 100% !important;
+  min-height: 0;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
 }
