@@ -13,14 +13,18 @@ const Screen = () => {
 	const { screenSize } = useDeviceConfig();
 
 	const style: CSSProperties = isMobileOnly
-		? { width: "100vw", height: "100vh" }
+		? {
+				width: "100vw",
+				height: "100dvh",
+				minHeight: "100dvh",
+			}
 		: {
 				width: screenSize.width,
 				height: screenSize.height,
 			};
 
 	return (
-		<div style={style} className="relative flex flex-col overflow-hidden" id="screen">
+		<div style={style} className="relative flex flex-col overflow-hidden bg-white" id="screen">
 			<Global
 				styles={css`
           &::-webkit-scrollbar {
@@ -28,7 +32,7 @@ const Screen = () => {
           }
         `}
 			/>
-			<DetectedOverall />
+			{!isMobileOnly && <DetectedOverall />}
 			{isDesktop && <StatusBar />}
 			<ErrorBoundary FallbackComponent={Fallback}>
 				<Outlet />
