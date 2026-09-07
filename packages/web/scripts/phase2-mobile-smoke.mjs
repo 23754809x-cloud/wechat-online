@@ -120,6 +120,10 @@ try {
 	await settle();
 	await page.getByRole("button", { name: "查看图片" }).click();
 	await page.getByTestId("mobile-image-preview").waitFor({ state: "visible" });
+	assert(
+		(await page.getByText("轻触屏幕返回", { exact: true }).count()) === 0,
+		"image preview leaked simulator instruction text",
+	);
 	await page.screenshot({ path: path.join(outputDir, "02-image-preview.png"), fullPage: true });
 	await page.getByRole("button", { name: "关闭图片预览" }).click();
 	await page.getByTestId("mobile-image-preview").waitFor({ state: "detached" });
