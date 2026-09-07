@@ -10,11 +10,13 @@ import {
 	getConversationListValueSnapshot,
 } from "@/stateV2/conversation";
 import { EMetaDataType, type StaticMetaData, allNodesTreeAtom } from "@/stateV2/detectedNode";
+import { setDialogueListValue } from "@/stateV2/dialogueList";
 import { SubnodeOutlined } from "@ant-design/icons";
 import { Modal, Tooltip } from "antd";
 import { useAtom, useSetAtom } from "jotai";
 import { useMemo } from "react";
 import { ReactSortable } from "react-sortablejs";
+import { Node } from "slate";
 import { twJoin } from "tailwind-merge";
 import { useConversationAPI } from "../context";
 import ConversationItem from "./ConversationItem";
@@ -32,8 +34,42 @@ const ConversationList = () => {
 		[conversationList],
 	);
 
+	const getPreviewText = (item?: TConversationItem) => {
+		if (!item) return "";
+		if (item.type === EConversationType.text) {
+			return item.textContent.map((node) => Node.string(node)).join("").trim() || "[文本]";
+		}
+		if (item.type === EConversationType.voice) return "[语音]";
+		if (item.type === EConversationType.transfer) return "[转账]";
+		if (item.type === EConversationType.redPacket) return "[红包]";
+		if (item.type === EConversationType.centerText) return item.simpleContent;
+		return `[${ConversationTypeLabel[item.type]}]`;
+	};
+
+	const syncDialoguePreview = (nextList: TConversationItem[]) => {
+		const lastMessage = getPreviewText(nextList.at(-1));
+		setDialogueListValue((prev) =>
+			prev.map((dialogue) => {
+				const matched = isGroupChat
+					? dialogue.groupId === conversationId
+					: dialogue.friendId === conversationId;
+				return matched ? { ...dialogue, lastMessage } : dialogue;
+			}),
+		);
+	};
+
+	const updateConversationList = (
+		updater: (prev: TConversationItem[]) => TConversationItem[],
+	) => {
+		setConversationList((prev) => {
+			const next = updater(prev);
+			syncDialoguePreview(next);
+			return next;
+		});
+	};
+
 	const deleteConversationItem = (id: TConversationItem["id"]) => {
-		setConversationList((prev) => prev.filter((v) => v.id !== id));
+		updateConversationList((prev) => prev.filter((v) => v.id !== id));
 	};
 
 	const handleOperationDelete = (id: TConversationItem["id"]) => {
@@ -44,7 +80,7 @@ const ConversationList = () => {
 	};
 
 	const handleMobileEditText = (id: TConversationItem["id"], text: string) => {
-		setConversationList((prev) =>
+		updateConversationList((prev) =>
 			prev.map((item) =>
 				item.id === id && item.type === EConversationType.text
 					? ({
@@ -57,7 +93,7 @@ const ConversationList = () => {
 	};
 
 	const handleMobileRecall = (id: TConversationItem["id"]) => {
-		setConversationList((prev) =>
+		updateConversationList((prev) =>
 			prev.map((item) =>
 				item.id === id
 					? ({
