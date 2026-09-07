@@ -95,12 +95,6 @@ const Image = ({ imageInfo, upperText, senderId, role, isVideo }: Props) => {
 							</div>
 						)}
 					</div>
-					<div
-						className="pointer-events-none absolute top-0 right-0 left-0 z-20 text-center text-sm text-white/70"
-						style={{ paddingTop: "max(env(safe-area-inset-top), 16px)" }}
-					>
-						轻触屏幕返回
-					</div>
 				</div>
 			)}
 		</>
