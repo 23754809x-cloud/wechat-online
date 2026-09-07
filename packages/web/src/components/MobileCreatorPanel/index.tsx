@@ -122,6 +122,11 @@ const MobileCreatorPanel = () => {
 		setSection("profile");
 	};
 
+	const cancelDraft = () => {
+		setSection(draft?.id === MYSELF_ID ? "home" : "contacts");
+		setDraft(null);
+	};
+
 	const addFriend = () => {
 		const newProfile: IStateProfile = {
 			id: nanoid(8),
@@ -135,7 +140,6 @@ const MobileCreatorPanel = () => {
 			privacy: "all",
 			thumbnailInfo: [],
 		};
-		setProfiles((prev) => [...prev, newProfile]);
 		beginEdit(newProfile);
 	};
 
@@ -148,22 +152,22 @@ const MobileCreatorPanel = () => {
 		const nickname = draft.nickname.trim();
 		const wechat = draft.wechat.trim();
 		if (!nickname || !wechat) return;
-		setProfiles((prev) =>
-			prev.map((profile) =>
-				profile.id === draft.id
-					? {
-						...draft,
-						nickname,
-						wechat,
-						remark: draft.remark?.trim() || undefined,
-						area: draft.area?.trim() || undefined,
-						signature: draft.signature?.trim() || undefined,
-						tickleText: draft.tickleText?.trim() || undefined,
-						description: draft.description?.trim() || undefined,
-					}
-					: profile,
-			),
-		);
+		const normalizedDraft: IStateProfile = {
+			...draft,
+			nickname,
+			wechat,
+			remark: draft.remark?.trim() || undefined,
+			area: draft.area?.trim() || undefined,
+			signature: draft.signature?.trim() || undefined,
+			tickleText: draft.tickleText?.trim() || undefined,
+			description: draft.description?.trim() || undefined,
+		};
+		setProfiles((prev) => {
+			const exists = prev.some((profile) => profile.id === draft.id);
+			return exists
+				? prev.map((profile) => (profile.id === draft.id ? normalizedDraft : profile))
+				: [...prev, normalizedDraft];
+		});
 		setSection(draft.id === MYSELF_ID ? "home" : "contacts");
 		setDraft(null);
 	};
@@ -196,10 +200,8 @@ const MobileCreatorPanel = () => {
 					className="min-w-16 text-left text-[15px] text-black/60"
 					onClick={() => {
 						if (section === "home") closeCreator();
-						else {
-							setDraft(null);
-							setSection("home");
-						}
+						else if (section === "profile") cancelDraft();
+						else setSection("home");
 					}}
 				>
 					{section === "home" ? "拍摄模式" : "返回"}
@@ -407,10 +409,7 @@ const MobileCreatorPanel = () => {
 							<button
 								type="button"
 								className="flex-1 rounded-2xl bg-[#e8e8e8] px-4 py-3 font-medium"
-								onClick={() => {
-									setDraft(null);
-									setSection(draft.id === MYSELF_ID ? "home" : "contacts");
-								}}
+								onClick={cancelDraft}
 							>
 								取消
 							</button>
