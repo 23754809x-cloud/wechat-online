@@ -6,6 +6,7 @@ on:
       - chatgpt/full-regression-audit
       - camera-realistic-mode-v2
       - camera-realistic-mode-v2-phase2
+      - chatgpt/v2.2-mobile-hardening
   pull_request:
     branches:
       - main
@@ -74,7 +75,30 @@ jobs:
         working-directory: packages/web
         env:
           APP_URL: http://127.0.0.1:4173/wechat-online/
+          VIEWPORT_WIDTH: 430
+          VIEWPORT_HEIGHT: 932
+          VIEWPORT_LABEL: 430x932
           TEST_OUTPUT: test-results/mobile
+        run: node scripts/mobile-smoke.mjs
+
+      - name: Mobile 390x844 smoke test
+        working-directory: packages/web
+        env:
+          APP_URL: http://127.0.0.1:4173/wechat-online/
+          VIEWPORT_WIDTH: 390
+          VIEWPORT_HEIGHT: 844
+          VIEWPORT_LABEL: 390x844
+          TEST_OUTPUT: test-results/mobile-390
+        run: node scripts/mobile-smoke.mjs
+
+      - name: Mobile 360x800 smoke test
+        working-directory: packages/web
+        env:
+          APP_URL: http://127.0.0.1:4173/wechat-online/
+          VIEWPORT_WIDTH: 360
+          VIEWPORT_HEIGHT: 800
+          VIEWPORT_LABEL: 360x800
+          TEST_OUTPUT: test-results/mobile-360
         run: node scripts/mobile-smoke.mjs
 
       - name: Camera mode creator regression
@@ -105,6 +129,8 @@ jobs:
           name: full-regression-artifacts
           path: |
             packages/web/test-results/mobile
+            packages/web/test-results/mobile-390
+            packages/web/test-results/mobile-360
             packages/web/test-results/camera-mode
             packages/web/test-results/phase2-mobile
             packages/web/test-results/advanced-creator
