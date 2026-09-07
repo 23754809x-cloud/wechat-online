@@ -80,6 +80,13 @@ async function advancedBack() {
 		.click();
 }
 
+async function groupCount() {
+	return page.evaluate(() => {
+		const raw = localStorage.getItem("allGroups");
+		return raw ? JSON.parse(raw).length : 0;
+	});
+}
+
 try {
 	await page.goto(baseURL, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(500);
@@ -115,6 +122,19 @@ try {
 
 	await advancedBack();
 	await page.getByTestId("advanced-group-entry").click();
+
+	// Cancelling a new group must not create a persistent placeholder group.
+	const groupsBeforeCancelledCreate = await groupCount();
+	await page.getByRole("button", { name: "+ 新建群聊", exact: true }).click();
+	await page.getByLabel("群聊名称").fill("不应保存群聊");
+	await advancedBack();
+	await page.getByTestId("advanced-group-manager").waitFor({ state: "visible" });
+	assert((await groupCount()) === groupsBeforeCancelledCreate, "cancelled group polluted allGroups storage");
+	assert(
+		(await page.getByText("不应保存群聊", { exact: true }).count()) === 0,
+		"cancelled group remained visible in group manager",
+	);
+
 	await page.getByRole("button", { name: "+ 新建群聊", exact: true }).click();
 	await page.getByLabel("群聊名称").fill("高级创作测试群");
 	await page.getByLabel("群公告").fill("用于验证手机端高级群聊设置持久化");
@@ -146,6 +166,10 @@ try {
 	await openAdvanced();
 	await page.getByTestId("advanced-group-entry").click();
 	await page.getByText("高级创作测试群", { exact: true }).waitFor({ state: "visible" });
+	assert(
+		(await page.getByText("不应保存群聊", { exact: true }).count()) === 0,
+		"cancelled group reappeared after reload",
+	);
 
 	await advancedBack();
 	await page.getByTestId("advanced-chat-entry").click();
@@ -158,7 +182,7 @@ try {
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
 	console.log(
-		"[advanced-creator-smoke] OK: layer isolation, cleanup, group creation and chat history editing persisted.",
+		"[advanced-creator-smoke] OK: layer isolation, cleanup, cancelled-group safety, group creation and chat history editing persisted.",
 	);
 } catch (error) {
 	console.error("[advanced-creator-smoke] FAILED", error);
