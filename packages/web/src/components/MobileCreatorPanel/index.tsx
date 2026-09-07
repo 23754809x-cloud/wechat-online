@@ -11,9 +11,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type CreatorSection = "home" | "profile" | "contacts";
 
+type HoldStart = {
+	pointerId: number;
+	x: number;
+	y: number;
+};
+
 const inputClass =
 	"w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-[16px] text-black outline-none focus:border-[#07c160]";
 const labelClass = "mb-1.5 block text-xs text-black/45";
+const HOLD_MOVE_TOLERANCE = 12;
 
 const cloneProfile = (profile: IStateProfile): IStateProfile => ({
 	...profile,
@@ -29,6 +36,7 @@ const MobileCreatorPanel = () => {
 	const [section, setSection] = useState<CreatorSection>("home");
 	const [draft, setDraft] = useState<IStateProfile | null>(null);
 	const holdTimerRef = useRef<number | null>(null);
+	const holdStartRef = useRef<HoldStart | null>(null);
 
 	const myself = useMemo(
 		() => profiles.find((profile) => profile.id === MYSELF_ID),
@@ -47,6 +55,7 @@ const MobileCreatorPanel = () => {
 				window.clearTimeout(holdTimerRef.current);
 				holdTimerRef.current = null;
 			}
+			holdStartRef.current = null;
 		};
 		const handlePointerDown = (event: PointerEvent) => {
 			if (open) return;
@@ -56,19 +65,34 @@ const MobileCreatorPanel = () => {
 				event.clientX <= window.innerWidth * 0.72;
 			if (!inHeaderHotspot) return;
 			clearHold();
+			holdStartRef.current = {
+				pointerId: event.pointerId,
+				x: event.clientX,
+				y: event.clientY,
+			};
 			holdTimerRef.current = window.setTimeout(() => {
+				holdTimerRef.current = null;
+				holdStartRef.current = null;
 				setSection("home");
 				setOpen(true);
 			}, 950);
 		};
+		const handlePointerMove = (event: PointerEvent) => {
+			const start = holdStartRef.current;
+			if (!start || start.pointerId !== event.pointerId) return;
+			const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+			if (moved > HOLD_MOVE_TOLERANCE) clearHold();
+		};
 
 		window.addEventListener("pointerdown", handlePointerDown, true);
+		window.addEventListener("pointermove", handlePointerMove, true);
 		window.addEventListener("pointerup", clearHold, true);
 		window.addEventListener("pointercancel", clearHold, true);
 		window.addEventListener("scroll", clearHold, true);
 		return () => {
 			clearHold();
 			window.removeEventListener("pointerdown", handlePointerDown, true);
+			window.removeEventListener("pointermove", handlePointerMove, true);
 			window.removeEventListener("pointerup", clearHold, true);
 			window.removeEventListener("pointercancel", clearHold, true);
 			window.removeEventListener("scroll", clearHold, true);
@@ -98,6 +122,11 @@ const MobileCreatorPanel = () => {
 		setSection("profile");
 	};
 
+	const cancelDraft = () => {
+		setSection(draft?.id === MYSELF_ID ? "home" : "contacts");
+		setDraft(null);
+	};
+
 	const addFriend = () => {
 		const newProfile: IStateProfile = {
 			id: nanoid(8),
@@ -111,7 +140,6 @@ const MobileCreatorPanel = () => {
 			privacy: "all",
 			thumbnailInfo: [],
 		};
-		setProfiles((prev) => [...prev, newProfile]);
 		beginEdit(newProfile);
 	};
 
@@ -124,22 +152,22 @@ const MobileCreatorPanel = () => {
 		const nickname = draft.nickname.trim();
 		const wechat = draft.wechat.trim();
 		if (!nickname || !wechat) return;
-		setProfiles((prev) =>
-			prev.map((profile) =>
-				profile.id === draft.id
-					? {
-						...draft,
-						nickname,
-						wechat,
-						remark: draft.remark?.trim() || undefined,
-						area: draft.area?.trim() || undefined,
-						signature: draft.signature?.trim() || undefined,
-						tickleText: draft.tickleText?.trim() || undefined,
-						description: draft.description?.trim() || undefined,
-					}
-					: profile,
-			),
-		);
+		const normalizedDraft: IStateProfile = {
+			...draft,
+			nickname,
+			wechat,
+			remark: draft.remark?.trim() || undefined,
+			area: draft.area?.trim() || undefined,
+			signature: draft.signature?.trim() || undefined,
+			tickleText: draft.tickleText?.trim() || undefined,
+			description: draft.description?.trim() || undefined,
+		};
+		setProfiles((prev) => {
+			const exists = prev.some((profile) => profile.id === draft.id);
+			return exists
+				? prev.map((profile) => (profile.id === draft.id ? normalizedDraft : profile))
+				: [...prev, normalizedDraft];
+		});
 		setSection(draft.id === MYSELF_ID ? "home" : "contacts");
 		setDraft(null);
 	};
@@ -172,10 +200,8 @@ const MobileCreatorPanel = () => {
 					className="min-w-16 text-left text-[15px] text-black/60"
 					onClick={() => {
 						if (section === "home") closeCreator();
-						else {
-							setDraft(null);
-							setSection("home");
-						}
+						else if (section === "profile") cancelDraft();
+						else setSection("home");
 					}}
 				>
 					{section === "home" ? "拍摄模式" : "返回"}
@@ -383,10 +409,7 @@ const MobileCreatorPanel = () => {
 							<button
 								type="button"
 								className="flex-1 rounded-2xl bg-[#e8e8e8] px-4 py-3 font-medium"
-								onClick={() => {
-									setDraft(null);
-									setSection(draft.id === MYSELF_ID ? "home" : "contacts");
-								}}
+								onClick={cancelDraft}
 							>
 								取消
 							</button>

@@ -75,6 +75,13 @@ async function openCreator() {
 	await page.getByTestId("mobile-creator-center").waitFor({ state: "visible" });
 }
 
+async function profileCount() {
+	return page.evaluate(() => {
+		const raw = localStorage.getItem("allProfiles");
+		return raw ? JSON.parse(raw).length : 0;
+	});
+}
+
 try {
 	await page.goto(baseURL, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(500);
@@ -108,6 +115,19 @@ try {
 	await page.getByText(/拍摄模式测试用户/).waitFor({ state: "visible" });
 
 	await page.getByRole("button", { name: "联系人管理" }).click();
+
+	// A cancelled new contact must never be written to persistent profile storage.
+	const countBeforeCancelledAdd = await profileCount();
+	await page.getByRole("button", { name: "+ 新增联系人", exact: true }).click();
+	await page.getByLabel("创作资料昵称").fill("不应保存联系人");
+	await page.getByRole("button", { name: "返回", exact: true }).click();
+	await page.getByText("联系人管理", { exact: true }).waitFor({ state: "visible" });
+	assert((await profileCount()) === countBeforeCancelledAdd, "cancelled new contact polluted allProfiles storage");
+	assert(
+		(await page.getByText("不应保存联系人", { exact: true }).count()) === 0,
+		"cancelled new contact remained visible in the contact manager",
+	);
+
 	await page.getByRole("button", { name: "+ 新增联系人", exact: true }).click();
 	await page.getByLabel("创作资料昵称").fill("手机拍摄联系人");
 	await page.getByLabel("创作资料微信号").fill("wx_camera_friend");
@@ -130,11 +150,15 @@ try {
 	await page.getByText(/拍摄模式测试用户/).waitFor({ state: "visible" });
 	await page.getByRole("button", { name: "联系人管理" }).click();
 	await page.getByText("拍摄备注", { exact: true }).waitFor({ state: "visible" });
+	assert(
+		(await page.getByText("不应保存联系人", { exact: true }).count()) === 0,
+		"cancelled contact returned after reload",
+	);
 
 	assert(failedResponses.length === 0, `HTTP failures:\n${failedResponses.join("\n")}`);
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
 	console.log(
-		"[camera-mode-smoke] OK: capture isolation, moved-hold cancellation, persistence and manifest passed.",
+		"[camera-mode-smoke] OK: capture isolation, moved-hold cancellation, cancelled-contact safety, persistence and manifest passed.",
 	);
 } catch (error) {
 	console.error("[camera-mode-smoke] FAILED", error);

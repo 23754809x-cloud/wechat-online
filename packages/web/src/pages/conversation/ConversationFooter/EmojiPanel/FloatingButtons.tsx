@@ -46,7 +46,7 @@ const FloatingButtons = ({ disabled }: Props) => {
 					"inline-flex h-10 cursor-pointer items-center rounded-md bg-wechatBrand-3 px-4 text-white",
 					disabled && "cursor-not-allowed bg-white text-black/30",
 				)}
-				onClick={disabled ? undefined : sendTextMessage}
+				onClick={disabled ? undefined : () => sendTextMessage()}
 			>
 				发送
 			</div>

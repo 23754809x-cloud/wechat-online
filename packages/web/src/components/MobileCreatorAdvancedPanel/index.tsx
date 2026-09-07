@@ -261,7 +261,6 @@ const MobileCreatorAdvancedPanel = () => {
 			memberIds: [MYSELF_ID],
 			ownerId: MYSELF_ID,
 		};
-		setGroups((prev) => [...prev, next]);
 		setGroupDraft({ ...next, memberIds: [...next.memberIds] });
 		setSection("group-edit");
 	};
@@ -298,7 +297,12 @@ const MobileCreatorAdvancedPanel = () => {
 			memberIds,
 			ownerId,
 		};
-		setGroups((prev) => prev.map((group) => (group.id === next.id ? next : group)));
+		setGroups((prev) => {
+			const exists = prev.some((group) => group.id === next.id);
+			return exists
+				? prev.map((group) => (group.id === next.id ? next : group))
+				: [...prev, next];
+		});
 		setGroupDraft(null);
 		setSection("groups");
 	};

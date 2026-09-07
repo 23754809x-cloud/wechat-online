@@ -39,7 +39,7 @@ import {
 	useState,
 } from "react";
 import { useParams } from "react-router-dom";
-import { type BaseEditor, Editor, Node, Transforms, createEditor } from "slate";
+import { type BaseEditor, type Descendant, Editor, Node, Transforms, createEditor } from "slate";
 import { withHistory } from "slate-history";
 import { type ReactEditor, withReact } from "slate-react";
 
@@ -70,7 +70,7 @@ interface IConversationAPIContext {
 	scrollConversationListToBtm: () => void;
 	inputEditor: BaseEditor & ReactEditor;
 	insertEmojiNode: (emojiSymbol: string) => void;
-	sendTextMessage: () => void;
+	sendTextMessage: (overrideValue?: Descendant[]) => void;
 	sendImage: (imageInfo: string) => void;
 	sendVoice: (data: VoiceDraft) => void;
 	sendRedPacket: (data: MoneyDraft) => void;
@@ -155,8 +155,8 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 		return { senderId: id, role: (id === MYSELF_ID ? "mine" : "friend") as TConversationRole };
 	}, [isGroupChat]);
 
-	const sendTextMessage = useCallback(() => {
-		const value = getInputterValueSnapshot();
+	const sendTextMessage = useCallback((overrideValue?: Descendant[]) => {
+		const value = overrideValue ?? getInputterValueSnapshot();
 		if (isEqual(value, SLATE_INITIAL_VALUE)) return;
 		const senderFields = getCurrentSenderFields();
 		setConversationListValue(conversationId, (prev) => [
