@@ -3,7 +3,6 @@ import KeyboardOutlinedSVG from "@/assets/keyboard-outlined.svg?react";
 import StickerOutlinedSVG from "@/assets/sticker-outlined.svg?react";
 import VoiceSVG from "@/assets/voice-outlined.svg?react";
 import { useCompactRuntime } from "@/runtime/compact";
-import { inputterValueAtom } from "@/stateV2/conversation";
 import {
 	EMetaDataType,
 	activatedNodeAtom,
@@ -11,9 +10,8 @@ import {
 } from "@/stateV2/detectedNode";
 import { getNodesAtomsValueSnapshot } from "@/stateV2/detectedNode/nodeAtom";
 import { modeAtom } from "@/stateV2/mode";
-import { SLATE_INITIAL_VALUE } from "@/wechatComponents/SlateText/utils";
-import { useAtomValue, useSetAtom } from "jotai";
-import { isArray, isEqual, keys } from "lodash-es";
+import { useSetAtom } from "jotai";
+import { isArray, keys } from "lodash-es";
 import { useState } from "react";
 import { useConversationAPI } from "../context";
 import BottomPopup from "./BottomPopup";
@@ -24,13 +22,15 @@ import MobileCreatorPanel from "./MobileCreatorPanel";
 const ConversationFooter = () => {
 	const [showEmojiPanel, setShowEmojiPanel] = useState(false);
 	const [showCreatorPanel, setShowCreatorPanel] = useState(false);
+	const [hasDraft, setHasDraft] = useState(false);
 	const compact = useCompactRuntime();
-	const inputValue = useAtomValue(inputterValueAtom);
 	const { sendTextMessage } = useConversationAPI();
 	const setMode = useSetAtom(modeAtom);
 	const setActivatedNode = useSetAtom(activatedNodeAtom);
-	const inputComponentProps = compact ? { showEmojiPanel, setShowEmojiPanel } : {};
-	const showSendButton = compact && !isEqual(inputValue, SLATE_INITIAL_VALUE);
+	const inputComponentProps = {
+		onDraftPresenceChange: setHasDraft,
+		...(compact ? { showEmojiPanel, setShowEmojiPanel } : {}),
+	};
 
 	const toggleEmojiPanel = () => {
 		setShowCreatorPanel(false);
@@ -85,7 +85,7 @@ const ConversationFooter = () => {
 							<StickerOutlinedSVG fill="#000" className="h-full w-full" />
 						)}
 					</button>
-					{showSendButton ? (
+					{hasDraft ? (
 						<button
 							type="button"
 							aria-label="发送消息"

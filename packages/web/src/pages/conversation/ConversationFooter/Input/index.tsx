@@ -5,6 +5,7 @@ import { EMetaDataType } from "@/stateV2/detectedNode";
 import Element from "@/wechatComponents/SlateText/Element";
 import { SLATE_INITIAL_VALUE } from "@/wechatComponents/SlateText/utils";
 import { useSetAtom } from "jotai";
+import { isEqual } from "lodash-es";
 import { type Dispatch, type SetStateAction, memo, useEffect } from "react";
 import { Editable, ReactEditor, Slate } from "slate-react";
 import { useConversationAPI } from "../../context";
@@ -13,9 +14,10 @@ import { focusFix } from "./utils";
 type Props = {
 	showEmojiPanel?: boolean;
 	setShowEmojiPanel?: Dispatch<SetStateAction<boolean>>;
+	onDraftPresenceChange?: (hasDraft: boolean) => void;
 };
 
-const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
+const Input = ({ showEmojiPanel, setShowEmojiPanel, onDraftPresenceChange }: Props) => {
 	const compact = useCompactRuntime();
 	const {
 		inputEditor: editor,
@@ -41,7 +43,14 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 				type: EMetaDataType.ConversationInput,
 			}}
 		>
-			<Slate editor={editor} initialValue={SLATE_INITIAL_VALUE} onChange={(v) => setInputValue(v)}>
+			<Slate
+				editor={editor}
+				initialValue={SLATE_INITIAL_VALUE}
+				onChange={(v) => {
+					setInputValue(v);
+					onDraftPresenceChange?.(!isEqual(v, SLATE_INITIAL_VALUE));
+				}}
+			>
 				<Editable
 					id="conversation-input"
 					onFocus={() => {
@@ -49,6 +58,14 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 							scrollConversationListToBtm();
 							if (showEmojiPanel) setShowEmojiPanel?.(false);
 						}
+					}}
+					onInput={(event) => {
+						const visibleText = (event.currentTarget.textContent ?? "").replace(/[\u200B\uFEFF]/g, "");
+						onDraftPresenceChange?.(visibleText.length > 0);
+					}}
+					onCompositionEnd={(event) => {
+						const visibleText = (event.currentTarget.textContent ?? "").replace(/[\u200B\uFEFF]/g, "");
+						onDraftPresenceChange?.(visibleText.length > 0);
 					}}
 					className="min-h-[42px] rounded-[5px] bg-white px-[11px] py-[8px] text-[17px] leading-[24px] caret-wechatBrand-3 focus:outline-none"
 					renderElement={(props) => <Element {...props} />}
