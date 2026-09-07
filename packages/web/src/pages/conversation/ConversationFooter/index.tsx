@@ -3,7 +3,6 @@ import KeyboardOutlinedSVG from "@/assets/keyboard-outlined.svg?react";
 import StickerOutlinedSVG from "@/assets/sticker-outlined.svg?react";
 import VoiceSVG from "@/assets/voice-outlined.svg?react";
 import { useCompactRuntime } from "@/runtime/compact";
-import { inputterValueAtom } from "@/stateV2/conversation";
 import {
 	EMetaDataType,
 	activatedNodeAtom,
@@ -30,7 +29,6 @@ const ConversationFooter = () => {
 	const lastTouchSendAtRef = useRef(0);
 	const compact = useCompactRuntime();
 	const { inputEditor, sendTextMessage } = useConversationAPI();
-	const setInputValue = useSetAtom(inputterValueAtom);
 	const setMode = useSetAtom(modeAtom);
 	const setActivatedNode = useSetAtom(activatedNodeAtom);
 	const inputComponentProps = {
@@ -49,9 +47,6 @@ const ConversationFooter = () => {
 		const liveEditorValue = inputEditor.children as Descendant[];
 		let valueToSend = liveEditorValue;
 
-		// iOS/WebKit can paint composition/input text before Slate's onChange has
-		// synchronized the Jotai draft. When that happens, persist the visible text
-		// into the same atom that sendTextMessage reads before invoking send.
 		if (isEqual(liveEditorValue, SLATE_INITIAL_VALUE) && cleanedVisibleDraft.length > 0) {
 			valueToSend = [
 				{
@@ -62,10 +57,11 @@ const ConversationFooter = () => {
 		}
 
 		if (isEqual(valueToSend, SLATE_INITIAL_VALUE)) return;
-		setInputValue(valueToSend);
 		setShowEmojiPanel(false);
 		setShowCreatorPanel(false);
-		sendTextMessage();
+		// Pass the exact live draft through to storage. Do not rely on a second
+		// atom read in the same event tick, which can diverge on iOS composition.
+		sendTextMessage(valueToSend);
 		setHasDraft(false);
 		setVisibleDraft("");
 	};
