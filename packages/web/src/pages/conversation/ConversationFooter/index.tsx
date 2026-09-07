@@ -3,6 +3,7 @@ import KeyboardOutlinedSVG from "@/assets/keyboard-outlined.svg?react";
 import StickerOutlinedSVG from "@/assets/sticker-outlined.svg?react";
 import VoiceSVG from "@/assets/voice-outlined.svg?react";
 import { useCompactRuntime } from "@/runtime/compact";
+import { inputterValueAtom } from "@/stateV2/conversation";
 import {
 	EMetaDataType,
 	activatedNodeAtom,
@@ -10,9 +11,11 @@ import {
 } from "@/stateV2/detectedNode";
 import { getNodesAtomsValueSnapshot } from "@/stateV2/detectedNode/nodeAtom";
 import { modeAtom } from "@/stateV2/mode";
-import { useSetAtom } from "jotai";
-import { isArray, keys } from "lodash-es";
+import { SLATE_INITIAL_VALUE } from "@/wechatComponents/SlateText/utils";
+import { useAtomValue, useSetAtom } from "jotai";
+import { isArray, isEqual, keys } from "lodash-es";
 import { useState } from "react";
+import { useConversationAPI } from "../context";
 import BottomPopup from "./BottomPopup";
 import EmojiPanel from "./EmojiPanel";
 import Input from "./Input";
@@ -22,13 +25,22 @@ const ConversationFooter = () => {
 	const [showEmojiPanel, setShowEmojiPanel] = useState(false);
 	const [showCreatorPanel, setShowCreatorPanel] = useState(false);
 	const compact = useCompactRuntime();
+	const inputValue = useAtomValue(inputterValueAtom);
+	const { sendTextMessage } = useConversationAPI();
 	const setMode = useSetAtom(modeAtom);
 	const setActivatedNode = useSetAtom(activatedNodeAtom);
 	const inputComponentProps = compact ? { showEmojiPanel, setShowEmojiPanel } : {};
+	const showSendButton = compact && !isEqual(inputValue, SLATE_INITIAL_VALUE);
 
 	const toggleEmojiPanel = () => {
 		setShowCreatorPanel(false);
 		setShowEmojiPanel((value) => !value);
+	};
+
+	const sendCurrentMessage = () => {
+		setShowEmojiPanel(false);
+		setShowCreatorPanel(false);
+		sendTextMessage();
 	};
 
 	const openCreatorOrDesktopEditor = () => {
@@ -73,14 +85,25 @@ const ConversationFooter = () => {
 							<StickerOutlinedSVG fill="#000" className="h-full w-full" />
 						)}
 					</button>
-					<button
-						type="button"
-						aria-label="更多聊天创作功能"
-						className="mb-[5px] h-[32px] w-[32px] shrink-0 cursor-pointer"
-						onClick={openCreatorOrDesktopEditor}
-					>
-						<Add2OutlinedSVG fill="#000" className="h-full w-full" />
-					</button>
+					{showSendButton ? (
+						<button
+							type="button"
+							aria-label="发送消息"
+							className="mb-[4px] h-[34px] shrink-0 rounded-[5px] bg-[#07c160] px-[12px] font-medium text-[15px] text-white active:bg-[#06ad56]"
+							onClick={sendCurrentMessage}
+						>
+							发送
+						</button>
+					) : (
+						<button
+							type="button"
+							aria-label="更多聊天创作功能"
+							className="mb-[5px] h-[32px] w-[32px] shrink-0 cursor-pointer"
+							onClick={openCreatorOrDesktopEditor}
+						>
+							<Add2OutlinedSVG fill="#000" className="h-full w-full" />
+						</button>
+					)}
 				</div>
 			</div>
 			<BottomPopup show={showEmojiPanel}>
