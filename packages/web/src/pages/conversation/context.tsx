@@ -155,43 +155,40 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 		return { senderId: id, role: (id === MYSELF_ID ? "mine" : "friend") as TConversationRole };
 	}, [isGroupChat]);
 
-	const sendTextMessage = useCallback(
-		(overrideValue?: Descendant[]) => {
-			const value = overrideValue ?? getInputterValueSnapshot();
-			if (isEqual(value, SLATE_INITIAL_VALUE)) return;
-			const senderFields = getCurrentSenderFields();
-			setConversationListValue(conversationId, (prev) => [
-				...prev,
-				{
-					type: EConversationType.text,
-					textContent: value,
-					id: nanoid(8),
-					sendTimestamp: dayjs().valueOf(),
-					upperText: fromLastGenerateUpperText(prev),
-					...senderFields,
-				} as TConversationItem,
-			]);
-			const pickedEmoji: string[] = [];
-			for (const nodeEntry of Node.descendants(inputEditor)) {
-				const [node] = nodeEntry;
-				if ((node as CustomElementEmoji).type === "emoji") {
-					const { emojiSymbol } = node as CustomElementEmoji;
-					pickedEmoji.push(emojiSymbol);
-				}
+	const sendTextMessage = useCallback((overrideValue?: Descendant[]) => {
+		const value = overrideValue ?? getInputterValueSnapshot();
+		if (isEqual(value, SLATE_INITIAL_VALUE)) return;
+		const senderFields = getCurrentSenderFields();
+		setConversationListValue(conversationId, (prev) => [
+			...prev,
+			{
+				type: EConversationType.text,
+				textContent: value,
+				id: nanoid(8),
+				sendTimestamp: dayjs().valueOf(),
+				upperText: fromLastGenerateUpperText(prev),
+				...senderFields,
+			} as TConversationItem,
+		]);
+		const pickedEmoji: string[] = [];
+		for (const nodeEntry of Node.descendants(inputEditor)) {
+			const [node] = nodeEntry;
+			if ((node as CustomElementEmoji).type === "emoji") {
+				const { emojiSymbol } = node as CustomElementEmoji;
+				pickedEmoji.push(emojiSymbol);
 			}
-			setRecentUsedEmoji((prev) => Array.from(new Set([...pickedEmoji, ...prev])).slice(0, 8));
-			const preview = value.map((node) => Node.string(node)).join(" ").trim() || "[表情]";
-			syncDialoguePreview(preview);
-			Transforms.delete(inputEditor, {
-				at: {
-					anchor: Editor.start(inputEditor, []),
-					focus: Editor.end(inputEditor, []),
-				},
-			});
-			scrollConversationListToBtm();
-		},
-		[conversationId, getCurrentSenderFields, inputEditor, scrollConversationListToBtm, syncDialoguePreview],
-	);
+		}
+		setRecentUsedEmoji((prev) => Array.from(new Set([...pickedEmoji, ...prev])).slice(0, 8));
+		const preview = value.map((node) => Node.string(node)).join(" ").trim() || "[表情]";
+		syncDialoguePreview(preview);
+		Transforms.delete(inputEditor, {
+			at: {
+				anchor: Editor.start(inputEditor, []),
+				focus: Editor.end(inputEditor, []),
+			},
+		});
+		scrollConversationListToBtm();
+	}, [conversationId, getCurrentSenderFields, scrollConversationListToBtm, syncDialoguePreview]);
 
 	const sendImage = useCallback(
 		(imageInfo: string) => {
@@ -269,6 +266,7 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 					amount,
 					note: note?.trim(),
 					transferStatus: "awaiting",
+					originalSender: senderFields.role,
 					id: nanoid(8),
 					sendTimestamp: dayjs().valueOf(),
 					upperText: fromLastGenerateUpperText(prev),
@@ -288,14 +286,14 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 				...prev,
 				{
 					type: EConversationType.file,
-					...fileData,
+					fileData,
 					id: nanoid(8),
 					sendTimestamp: dayjs().valueOf(),
 					upperText: fromLastGenerateUpperText(prev),
 					...senderFields,
 				} as TConversationItem,
 			]);
-			syncDialoguePreview("[文件]");
+			syncDialoguePreview(`[文件] ${fileData.fileName}`);
 			scrollConversationListToBtm();
 		},
 		[conversationId, getCurrentSenderFields, scrollConversationListToBtm, syncDialoguePreview],
@@ -322,87 +320,93 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 	);
 
 	const sendTickleText = useCallback(
-		(friendId: IStateProfile["id"]) => {
-			const sender = getMyProfileValueSnapshot();
-			const friend = getProfileValueSnapshot(friendId);
-			if (!friend) return;
-			setConversationListValue(conversationId, (prev) => [
-				...prev,
-				{
-					type: EConversationType.tickle,
-					id: nanoid(8),
-					sendTimestamp: dayjs().valueOf(),
-					text: `${sender.nickname} 拍了拍 ${friend.nickname}`,
-					upperText: fromLastGenerateUpperText(prev),
-					...getGroupSenderFields(),
-				} as TConversationItem,
-			]);
-			syncDialoguePreview("[拍一拍]");
-			scrollConversationListToBtm();
-		},
-		[conversationId, getGroupSenderFields, scrollConversationListToBtm, syncDialoguePreview],
+		throttle(
+			(friendId: IStateProfile["id"]) => {
+				const friendProfile = getProfileValueSnapshot(friendId)!;
+				const myProfile = getMyProfileValueSnapshot()!;
+				const { senderId } = getInputterConfigValueSnapshot();
+				let finalTickleText = "";
+				if (isGroupChat && senderId && senderId !== MYSELF_ID) {
+					const senderProfile = getProfileValueSnapshot(senderId)!;
+					if (friendId === senderId) {
+						finalTickleText = `"${senderProfile.nickname}" 拍了拍自己${senderProfile.tickleText ?? ""}`;
+					} else {
+						finalTickleText = `"${senderProfile.nickname}" 拍了拍 "${friendProfile.nickname}" ${friendProfile.tickleText ?? ""}`;
+					}
+				} else if (friendId === MYSELF_ID) {
+					finalTickleText = `我拍了拍自己${myProfile.tickleText ?? ""}`;
+				} else {
+					finalTickleText = `我拍了拍 "${friendProfile.nickname}" ${friendProfile.tickleText ?? ""}`;
+				}
+				setConversationListValue(conversationId, (prev) => [
+					...prev,
+					{
+						type: EConversationType.centerText,
+						id: nanoid(8),
+						sendTimestamp: dayjs().valueOf(),
+						role: "mine",
+						simpleContent: finalTickleText,
+						upperText: fromLastGenerateUpperText(prev),
+						extraClassName: friendId === MYSELF_ID ? "text-black/70 font-bold" : "",
+					} as TConversationItem,
+				]);
+				syncDialoguePreview(finalTickleText);
+				animateElement("#screen", "headShake");
+				scrollConversationListToBtm();
+			},
+			1000,
+			{ trailing: false },
+		),
+		[conversationId, isGroupChat, scrollConversationListToBtm, syncDialoguePreview],
 	);
 
 	const sendTransfer = useCallback(
-		(data: Omit<IConversationTypeTransfer, "id" | "sendTimestamp" | "upperText" | "type">) => {
+		(data: Parameters<IConversationAPIContext["sendTransfer"]>[0]) => {
 			setConversationListValue(conversationId, (prev) => [
 				...prev,
 				{
-					...data,
 					type: EConversationType.transfer,
 					id: nanoid(8),
 					sendTimestamp: dayjs().valueOf(),
 					upperText: fromLastGenerateUpperText(prev),
+					...data,
+					...getGroupSenderFields(),
 				} as TConversationItem,
 			]);
 			syncDialoguePreview("[转账]");
 			scrollConversationListToBtm();
 		},
-		[conversationId, scrollConversationListToBtm, syncDialoguePreview],
+		[conversationId, getGroupSenderFields, scrollConversationListToBtm, syncDialoguePreview],
 	);
 
 	const sendRedPacketAcceptedReply = useCallback(
-		(redPacketId: IConversationTypeRedPacket["id"]) => {
-			setConversationListValue(conversationId, (prev) => {
-				const target = prev.find((item) => item.id === redPacketId);
-				if (!target || target.type !== EConversationType.redPacket) return prev;
-				return [
-					...prev,
-					{
-						type: EConversationType.redPacketAccepted,
-						id: nanoid(8),
-						sendTimestamp: dayjs().valueOf(),
-						upperText: fromLastGenerateUpperText(prev),
-						originalSender: target.originalSender,
-						...getGroupSenderFields(),
-					} as TConversationItem,
-				];
-			});
+		(redPacketId: Parameters<IConversationAPIContext["sendRedPacketAcceptedReply"]>[0]) => {
+			setConversationListValue(conversationId, (prev) => [
+				...prev,
+				{
+					type: EConversationType.redPacketAcceptedReply,
+					id: nanoid(8),
+					sendTimestamp: dayjs().valueOf(),
+					upperText: fromLastGenerateUpperText(prev),
+					redPacketId,
+					...getGroupSenderFields(),
+				} as TConversationItem,
+			]);
 			syncDialoguePreview("[红包]");
 			scrollConversationListToBtm();
 		},
 		[conversationId, getGroupSenderFields, scrollConversationListToBtm, syncDialoguePreview],
 	);
 
-	const removeLastNode = useCallback(() => {
-		const at = inputEditor.selection;
-		if (!at) return;
-		Transforms.delete(inputEditor, { reverse: true });
-	}, [inputEditor]);
+	const removeLastNode = useCallback(async () => {
+		Editor.deleteBackward(inputEditor, { unit: "character" });
+	}, []);
 
-	const focusInput = useMemo(
-		() =>
-			throttle(() => {
-				try {
-					ReactEditor.focus(inputEditor);
-				} catch {
-					// The mobile editor can briefly unmount while switching creator panels.
-				}
-			}, 100),
-		[inputEditor],
-	);
+	const focusInput = useCallback(() => {
+		setMobileInputMode("text");
+	}, []);
 
-	const value = useMemo<IConversationAPIContext>(
+	const value: IConversationAPIContext = useMemo(
 		() => ({
 			conversationId,
 			isGroupChat,
@@ -417,10 +421,10 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 			sendTransferFromCurrentSender,
 			sendFile,
 			sendPersonalCard,
+			removeLastNode,
 			sendTickleText,
 			sendTransfer,
 			sendRedPacketAcceptedReply,
-			removeLastNode,
 			focusInput,
 			mobileInputMode,
 			setMobileInputMode,
@@ -429,9 +433,8 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 		[
 			conversationId,
 			isGroupChat,
-			scrollConversationListToBtm,
-			inputEditor,
-			insertEmojiNode,
+			mobileInputMode,
+			previousMobileInputMode,
 			sendTextMessage,
 			sendImage,
 			sendVoice,
@@ -442,18 +445,13 @@ export const ConversationAPIProvider = ({ children }: PropsWithChildren) => {
 			sendTickleText,
 			sendTransfer,
 			sendRedPacketAcceptedReply,
-			removeLastNode,
-			focusInput,
-			mobileInputMode,
-			previousMobileInputMode,
+			scrollConversationListToBtm,
 		],
 	);
 
-	return <ConversationAPIContext.Provider value={value}>{children}</ConversationAPIContext.Provider>;
+	return (
+		<ConversationAPIContext.Provider value={value}>{children}</ConversationAPIContext.Provider>
+	);
 };
 
-export function useConversationAPI() {
-	const context = useContext(ConversationAPIContext);
-	if (!context) throw new Error("useConversationAPI must be used within ConversationAPIProvider");
-	return context;
-}
+export const useConversationAPI = () => useContext(ConversationAPIContext)!;
