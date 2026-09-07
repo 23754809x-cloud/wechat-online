@@ -5,6 +5,7 @@ on:
     branches:
       - chatgpt/full-regression-audit
       - camera-realistic-mode-v2
+      - camera-realistic-mode-v2-phase2
   pull_request:
     branches:
       - main
@@ -16,7 +17,7 @@ permissions:
 jobs:
   regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -83,6 +84,13 @@ jobs:
           TEST_OUTPUT: test-results/camera-mode
         run: node scripts/camera-mode-smoke.mjs
 
+      - name: Phase2 mobile interaction regression
+        working-directory: packages/web
+        env:
+          APP_URL: http://127.0.0.1:4173/wechat-online/
+          TEST_OUTPUT: test-results/phase2-mobile
+        run: node scripts/phase2-mobile-smoke.mjs
+
       - name: Upload regression artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -91,6 +99,7 @@ jobs:
           path: |
             packages/web/test-results/mobile
             packages/web/test-results/camera-mode
+            packages/web/test-results/phase2-mobile
             packages/web/test-results/static-runtime-audit.json
           if-no-files-found: ignore
           retention-days: 7
