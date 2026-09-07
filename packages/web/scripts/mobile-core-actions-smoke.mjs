@@ -35,8 +35,6 @@ async function ensureCreatorOpen() {
 		await plus.tap();
 		await panel.waitFor({ state: "visible" });
 	}
-	// BottomPopup has an enter/leave transition. Wait until action buttons are
-	// stable before touching the next tool instead of toggling a still-open panel.
 	await page.waitForTimeout(350);
 }
 
@@ -55,6 +53,13 @@ async function sendTextByTouch(text) {
 	await send.waitFor({ state: "visible" });
 	await send.tap();
 	await page.getByText(text, { exact: true }).waitFor({ state: "visible" });
+}
+
+async function readConversationStorage() {
+	return page.evaluate(() => {
+		const raw = localStorage.getItem("conversationList-1");
+		return raw ? JSON.parse(raw) : [];
+	});
 }
 
 try {
@@ -101,16 +106,20 @@ try {
 		"red packet message was not rendered",
 	);
 
-	// Transfer.
+	// Transfer. Awaiting transfer cards intentionally show status text instead of the note.
 	await ensureCreatorOpen();
 	await page.getByRole("button", { name: "转账", exact: true }).tap();
 	await page.getByLabel("转账金额").fill("12.34");
 	await page.getByLabel("转账说明").fill("核心转账测试");
 	await modalOk();
-	await page.waitForTimeout(250);
+	await page.getByText("¥12.34", { exact: true }).waitFor({ state: "visible" });
+	await page.getByText("待朋友确认收钱", { exact: true }).waitFor({ state: "visible" });
+	const storedAfterTransfer = await readConversationStorage();
 	assert(
-		(await page.getByText("核心转账测试", { exact: true }).count()) > 0,
-		"transfer message was not rendered",
+		storedAfterTransfer.some(
+			(item) => item.type === "transfer" && item.amount === "12.34" && item.note === "核心转账测试",
+		),
+		"transfer amount/note were not persisted",
 	);
 
 	// Contact card: default to the first available contact.
@@ -140,7 +149,15 @@ try {
 	await page.reload({ waitUntil: "domcontentloaded" });
 	await page.getByText(plainText, { exact: true }).waitFor({ state: "visible" });
 	await page.getByText("核心文件测试.txt", { exact: true }).waitFor({ state: "visible" });
-	await page.getByText("核心转账测试", { exact: true }).waitFor({ state: "visible" });
+	await page.getByText("¥12.34", { exact: true }).waitFor({ state: "visible" });
+	await page.getByText("待朋友确认收钱", { exact: true }).waitFor({ state: "visible" });
+	const storedAfterReload = await readConversationStorage();
+	assert(
+		storedAfterReload.some(
+			(item) => item.type === "transfer" && item.amount === "12.34" && item.note === "核心转账测试",
+		),
+		"transfer persistence was lost after reload",
+	);
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
 	console.log(
