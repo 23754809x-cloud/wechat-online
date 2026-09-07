@@ -7,6 +7,7 @@ on:
       - camera-realistic-mode-v2
       - camera-realistic-mode-v2-phase2
       - chatgpt/v2.2-mobile-hardening
+      - chatgpt/v2.3-send-message-hotfix
   pull_request:
     branches:
       - main
@@ -101,6 +102,13 @@ jobs:
           TEST_OUTPUT: test-results/mobile-360
         run: node scripts/mobile-smoke.mjs
 
+      - name: Mobile send-button regression
+        working-directory: packages/web
+        env:
+          APP_URL: http://127.0.0.1:4173/wechat-online/
+          TEST_OUTPUT: test-results/mobile-send
+        run: node scripts/mobile-send-smoke.mjs
+
       - name: Camera mode creator regression
         working-directory: packages/web
         env:
@@ -131,6 +139,7 @@ jobs:
             packages/web/test-results/mobile
             packages/web/test-results/mobile-390
             packages/web/test-results/mobile-360
+            packages/web/test-results/mobile-send
             packages/web/test-results/camera-mode
             packages/web/test-results/phase2-mobile
             packages/web/test-results/advanced-creator
