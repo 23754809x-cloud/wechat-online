@@ -62,6 +62,13 @@ async function openAdvanced() {
 	await page.getByTestId("advanced-creator-center").waitFor({ state: "visible" });
 }
 
+async function advancedBack() {
+	await page
+		.getByTestId("advanced-creator-center")
+		.getByRole("button", { name: "返回", exact: true })
+		.click();
+}
+
 try {
 	await page.goto(baseURL, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(500);
@@ -83,12 +90,19 @@ try {
 
 	await page.getByTestId("advanced-contact-entry").click();
 	await page.getByTestId("advanced-contact-cleanup").waitFor({ state: "visible" });
-	const contactRow = page.getByTestId("advanced-contact-cleanup").locator("div.rounded-2xl").filter({ hasText: tempName }).last();
+	const contactRow = page
+		.getByTestId("advanced-contact-cleanup")
+		.locator("div.rounded-2xl")
+		.filter({ hasText: tempName })
+		.last();
 	await contactRow.getByRole("button", { name: "删除", exact: true }).click();
 	await contactRow.getByRole("button", { name: "确认删除", exact: true }).click();
-	assert((await page.getByText(tempName, { exact: true }).count()) === 0, "contact cleanup did not delete temporary contact");
+	assert(
+		(await page.getByText(tempName, { exact: true }).count()) === 0,
+		"contact cleanup did not delete temporary contact",
+	);
 
-	await page.getByRole("button", { name: "返回", exact: true }).click();
+	await advancedBack();
 	await page.getByTestId("advanced-group-entry").click();
 	await page.getByRole("button", { name: "+ 新建群聊", exact: true }).click();
 	await page.getByLabel("群聊名称").fill("高级创作测试群");
@@ -97,16 +111,23 @@ try {
 	await page.getByText("高级创作测试群", { exact: true }).waitFor({ state: "visible" });
 	await page.screenshot({ path: path.join(outputDir, "02-group-created.png"), fullPage: true });
 
-	await page.getByRole("button", { name: "返回", exact: true }).click();
+	await advancedBack();
 	await page.getByTestId("advanced-chat-entry").click();
 	await page.getByLabel("选择要管理的聊天").selectOption({ label: "单聊 · 唐吉诃德" });
 	await page.getByTestId("advanced-chat-record-editor").waitFor({ state: "visible" });
-	const firstTextRow = page.getByTestId("advanced-chat-record-editor").locator("[data-message-id]").filter({ hasText: "以后别联系了" }).first();
+	const firstTextRow = page
+		.getByTestId("advanced-chat-record-editor")
+		.locator("[data-message-id]")
+		.filter({ hasText: "以后别联系了" })
+		.first();
 	await firstTextRow.getByRole("button", { name: "修改文字", exact: true }).click();
 	await firstTextRow.getByLabel("编辑聊天文本").fill("高级创作已修改聊天记录");
 	await firstTextRow.getByRole("button", { name: "保存文字", exact: true }).click();
 	await page.getByText("高级创作已修改聊天记录", { exact: true }).waitFor({ state: "visible" });
-	await page.screenshot({ path: path.join(outputDir, "03-chat-history-edited.png"), fullPage: true });
+	await page.screenshot({
+		path: path.join(outputDir, "03-chat-history-edited.png"),
+		fullPage: true,
+	});
 
 	await page.reload({ waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(500);
@@ -115,18 +136,25 @@ try {
 	await page.getByTestId("advanced-group-entry").click();
 	await page.getByText("高级创作测试群", { exact: true }).waitFor({ state: "visible" });
 
-	await page.getByRole("button", { name: "返回", exact: true }).click();
+	await advancedBack();
 	await page.getByTestId("advanced-chat-entry").click();
 	await page.getByLabel("选择要管理的聊天").selectOption({ label: "单聊 · 唐吉诃德" });
 	await page.getByText("高级创作已修改聊天记录", { exact: true }).waitFor({ state: "visible" });
-	assert((await page.getByText(tempName, { exact: true }).count()) === 0, "deleted contact reappeared after reload");
+	assert(
+		(await page.getByText(tempName, { exact: true }).count()) === 0,
+		"deleted contact reappeared after reload",
+	);
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
-	console.log("[advanced-creator-smoke] OK: cleanup, group creation and chat history editing persisted.");
+	console.log(
+		"[advanced-creator-smoke] OK: cleanup, group creation and chat history editing persisted.",
+	);
 } catch (error) {
 	console.error("[advanced-creator-smoke] FAILED", error);
 	if (runtimeErrors.length) console.error(runtimeErrors.join("\n"));
-	await page.screenshot({ path: path.join(outputDir, "failure.png"), fullPage: true }).catch(() => {});
+	await page
+		.screenshot({ path: path.join(outputDir, "failure.png"), fullPage: true })
+		.catch(() => {});
 	process.exitCode = 1;
 } finally {
 	await context.close();
