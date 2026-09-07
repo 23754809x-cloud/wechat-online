@@ -28,27 +28,49 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
-async function verifyIOSCompositionShowsSend() {
+async function verifyIOSCompositionActuallySends() {
+	const text = "余光";
 	const input = page.locator("#conversation-input");
+	const messageSelector = '[data-testid^="mobile-message-action-"]';
+	const beforeCount = await page.locator(messageSelector).count();
 	await input.tap();
-	await input.evaluate((node) => {
-		node.textContent = "余光";
+
+	// Reproduce the state seen on real iPhone/WebKit: the contenteditable DOM already
+	// contains visible composition text while Slate/Jotai can still hold the empty draft.
+	await input.evaluate((node, compositionText) => {
+		node.textContent = compositionText;
 		node.dispatchEvent(
 			new InputEvent("input", {
 				bubbles: true,
 				cancelable: false,
-				data: "余光",
+				data: compositionText,
 				inputType: "insertCompositionText",
 				isComposing: true,
 			}),
 		);
-	});
-	await page.getByRole("button", { name: "发送消息", exact: true }).waitFor({ state: "visible" });
+	}, text);
+
+	const sendButton = page.getByRole("button", { name: "发送消息", exact: true });
+	await sendButton.waitFor({ state: "visible" });
 	assert(
 		(await page.getByRole("button", { name: "更多聊天创作功能" }).count()) === 0,
 		"iOS composition text was visible but plus button did not switch to send",
 	);
-	await page.screenshot({ path: path.join(outputDir, "ios-composition-send-visible.png"), fullPage: true });
+	await page.screenshot({ path: path.join(outputDir, "ios-stale-draft-send-ready.png"), fullPage: true });
+
+	// This is the regression that v2.3.1 missed: seeing the button is not enough.
+	// A touch must create a message even while the old external draft snapshot is empty.
+	await sendButton.tap();
+	await page.waitForFunction(
+		({ selector, count }) => document.querySelectorAll(selector).length > count,
+		{ selector: messageSelector, count: beforeCount },
+	);
+	await page.getByRole("button", { name: "更多聊天创作功能" }).waitFor({ state: "visible" });
+
+	// Reload removes the manually-mutated contenteditable DOM. The text must still
+	// exist as a persisted conversation message, proving the send path actually ran.
+	await page.reload({ waitUntil: "domcontentloaded" });
+	await page.getByText(text, { exact: true }).waitFor({ state: "visible" });
 }
 
 async function typeAndTapSend(text, { verifyCompositionGuard = false } = {}) {
@@ -96,10 +118,8 @@ try {
 		(await page.getByRole("button", { name: "发送消息", exact: true }).count()) === 0,
 		"empty input incorrectly showed send button",
 	);
-	await verifyIOSCompositionShowsSend();
+	await verifyIOSCompositionActuallySends();
 
-	// Reload after the low-level WebKit composition reproduction so the Slate editor starts clean.
-	await page.reload({ waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(300);
 	const privateText = "手机点击发送按钮-单聊";
 	await typeAndTapSend(privateText, { verifyCompositionGuard: true });
@@ -115,7 +135,7 @@ try {
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
 	console.log(
-		"[mobile-send-smoke] OK: iOS composition text shows send, touch send works for private/group chat, persists after reload, and IME Enter is guarded.",
+		"[mobile-send-smoke] OK: stale iOS composition draft actually sends by touch, private/group touch send persists, and IME Enter is guarded.",
 	);
 } catch (error) {
 	console.error("[mobile-send-smoke] FAILED", error);

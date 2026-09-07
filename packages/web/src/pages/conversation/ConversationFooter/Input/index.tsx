@@ -15,9 +15,18 @@ type Props = {
 	showEmojiPanel?: boolean;
 	setShowEmojiPanel?: Dispatch<SetStateAction<boolean>>;
 	onDraftPresenceChange?: (hasDraft: boolean) => void;
+	onVisibleDraftChange?: (visibleText: string) => void;
 };
 
-const Input = ({ showEmojiPanel, setShowEmojiPanel, onDraftPresenceChange }: Props) => {
+const getVisibleText = (node: HTMLElement) =>
+	(node.textContent ?? "").replace(/[\u200B\uFEFF]/g, "");
+
+const Input = ({
+	showEmojiPanel,
+	setShowEmojiPanel,
+	onDraftPresenceChange,
+	onVisibleDraftChange,
+}: Props) => {
 	const compact = useCompactRuntime();
 	const {
 		inputEditor: editor,
@@ -34,6 +43,12 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel, onDraftPresenceChange }: Pro
 			ReactEditor.focus(editor);
 		}
 	}, [compact, mobileInputMode, previousMobileInputMode, editor]);
+
+	const syncNativeDraft = (node: HTMLElement) => {
+		const visibleText = getVisibleText(node);
+		onVisibleDraftChange?.(visibleText);
+		onDraftPresenceChange?.(visibleText.length > 0);
+	};
 
 	return (
 		<canBeDetected.div
@@ -59,14 +74,8 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel, onDraftPresenceChange }: Pro
 							if (showEmojiPanel) setShowEmojiPanel?.(false);
 						}
 					}}
-					onInput={(event) => {
-						const visibleText = (event.currentTarget.textContent ?? "").replace(/[\u200B\uFEFF]/g, "");
-						onDraftPresenceChange?.(visibleText.length > 0);
-					}}
-					onCompositionEnd={(event) => {
-						const visibleText = (event.currentTarget.textContent ?? "").replace(/[\u200B\uFEFF]/g, "");
-						onDraftPresenceChange?.(visibleText.length > 0);
-					}}
+					onInput={(event) => syncNativeDraft(event.currentTarget)}
+					onCompositionEnd={(event) => syncNativeDraft(event.currentTarget)}
 					className="min-h-[42px] rounded-[5px] bg-white px-[11px] py-[8px] text-[17px] leading-[24px] caret-wechatBrand-3 focus:outline-none"
 					renderElement={(props) => <Element {...props} />}
 					onKeyDown={(ev) => {
