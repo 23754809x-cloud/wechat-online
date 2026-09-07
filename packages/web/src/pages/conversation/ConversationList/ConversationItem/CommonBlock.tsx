@@ -1,3 +1,4 @@
+import DEFAULT_FRIEND_AVATAR from "@/assets/friend-avatar-default.svg";
 import { h } from "@/components/HashAssets";
 import { canBeDetected } from "@/components/NodeDetected";
 import useModeNavigate from "@/components/useModeNavigate";
@@ -39,11 +40,14 @@ const CommonBlock = <P extends AnyObject>({
 	onClick,
 }: PropsWithChildren<Props<P>>) => {
 	const profile = useAtomValue(profileAtom(senderId));
-	const { avatarInfo = "", nickname = "", remark } = profile ?? {};
+	const avatarInfo = profile?.avatarInfo || DEFAULT_FRIEND_AVATAR;
+	const nickname = profile?.nickname || "已删除联系人";
+	const remark = profile?.remark;
 	const navigate = useModeNavigate({ silence: true });
 	const { sendTickleText, isGroupChat } = useConversationAPI();
 
 	const handleClick: MouseEventHandler<HTMLImageElement> = (ev) => {
+		if (!profile) return;
 		const { detail: count } = ev;
 		if (count === 2) {
 			handleDoubliClick();
@@ -53,7 +57,7 @@ const CommonBlock = <P extends AnyObject>({
 	};
 
 	const handleDoubliClick = () => {
-		if (getModeValueSnapshot() === "edit") return;
+		if (!profile || getModeValueSnapshot() === "edit") return;
 		sendTickleText(senderId);
 	};
 
