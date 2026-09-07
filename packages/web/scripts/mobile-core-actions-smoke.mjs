@@ -27,15 +27,24 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
-async function openCreator() {
-	const plus = page.getByRole("button", { name: "更多聊天创作功能" });
-	await plus.waitFor({ state: "visible" });
-	await plus.tap();
-	await page.getByTestId("mobile-creator-panel").waitFor({ state: "visible" });
+async function ensureCreatorOpen() {
+	const panel = page.getByTestId("mobile-creator-panel");
+	if (!(await panel.isVisible().catch(() => false))) {
+		const plus = page.getByRole("button", { name: "更多聊天创作功能" });
+		await plus.waitFor({ state: "visible" });
+		await plus.tap();
+		await panel.waitFor({ state: "visible" });
+	}
+	// BottomPopup has an enter/leave transition. Wait until action buttons are
+	// stable before touching the next tool instead of toggling a still-open panel.
+	await page.waitForTimeout(350);
 }
 
 async function modalOk() {
-	await page.locator(".ant-modal:visible .ant-modal-footer .ant-btn-primary").last().click();
+	const modal = page.locator(".ant-modal:visible");
+	await modal.locator(".ant-modal-footer .ant-btn-primary").last().click();
+	await modal.waitFor({ state: "hidden" }).catch(() => {});
+	await page.waitForTimeout(150);
 }
 
 async function sendTextByTouch(text) {
@@ -56,7 +65,7 @@ try {
 	await sendTextByTouch(plainText);
 
 	// Image: exercise the hidden upload input and local asset persistence.
-	await openCreator();
+	await ensureCreatorOpen();
 	const imageInput = page.locator('input[type="file"][accept="image/*"]');
 	await imageInput.setInputFiles({
 		name: "audit.png",
@@ -67,10 +76,13 @@ try {
 		),
 	});
 	await page.waitForTimeout(350);
-	assert((await page.locator('img[src^="blob:"], img[src^="data:"]').count()) > 0, "image message was not rendered");
+	assert(
+		(await page.locator('img[src^="blob:"], img[src^="data:"]').count()) > 0,
+		"image message was not rendered",
+	);
 
 	// Voice.
-	await openCreator();
+	await ensureCreatorOpen();
 	await page.getByRole("button", { name: "语音", exact: true }).tap();
 	await page.getByLabel("语音时长").fill("9");
 	await page.getByLabel("语音转文字").fill("核心语音转文字");
@@ -78,35 +90,42 @@ try {
 	await page.getByText("9''", { exact: true }).waitFor({ state: "visible" });
 
 	// Red packet.
-	await openCreator();
+	await ensureCreatorOpen();
 	await page.getByRole("button", { name: "红包", exact: true }).tap();
 	await page.getByLabel("红包金额").fill("8.88");
 	await page.getByLabel("红包说明").fill("核心红包测试");
 	await modalOk();
 	await page.waitForTimeout(250);
-	assert((await page.getByText("核心红包测试", { exact: true }).count()) > 0, "red packet message was not rendered");
+	assert(
+		(await page.getByText("核心红包测试", { exact: true }).count()) > 0,
+		"red packet message was not rendered",
+	);
 
 	// Transfer.
-	await openCreator();
+	await ensureCreatorOpen();
 	await page.getByRole("button", { name: "转账", exact: true }).tap();
 	await page.getByLabel("转账金额").fill("12.34");
 	await page.getByLabel("转账说明").fill("核心转账测试");
 	await modalOk();
 	await page.waitForTimeout(250);
-	assert((await page.getByText("核心转账测试", { exact: true }).count()) > 0, "transfer message was not rendered");
+	assert(
+		(await page.getByText("核心转账测试", { exact: true }).count()) > 0,
+		"transfer message was not rendered",
+	);
 
 	// Contact card: default to the first available contact.
-	await openCreator();
+	await ensureCreatorOpen();
 	await page.getByRole("button", { name: "名片", exact: true }).tap();
 	await modalOk();
 	await page.waitForTimeout(250);
 	assert(
-		(await page.locator("text=个人名片").count()) > 0 || (await page.locator("text=名片").count()) > 0,
+		(await page.locator("text=个人名片").count()) > 0 ||
+			(await page.locator("text=名片").count()) > 0,
 		"personal card message was not rendered",
 	);
 
 	// File.
-	await openCreator();
+	await ensureCreatorOpen();
 	const fileInput = page.locator('input[type="file"]:not([accept])');
 	await fileInput.setInputFiles({
 		name: "核心文件测试.txt",
@@ -124,11 +143,15 @@ try {
 	await page.getByText("核心转账测试", { exact: true }).waitFor({ state: "visible" });
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
-	console.log("[mobile-core-actions] OK: text/image/voice/red-packet/transfer/card/file real actions completed and persisted.");
+	console.log(
+		"[mobile-core-actions] OK: text/image/voice/red-packet/transfer/card/file real actions completed and persisted.",
+	);
 } catch (error) {
 	console.error("[mobile-core-actions] FAILED", error);
 	if (runtimeErrors.length) console.error(runtimeErrors.join("\n"));
-	await page.screenshot({ path: path.join(outputDir, "failure.png"), fullPage: true }).catch(() => {});
+	await page
+		.screenshot({ path: path.join(outputDir, "failure.png"), fullPage: true })
+		.catch(() => {});
 	process.exitCode = 1;
 } finally {
 	await context.close();
