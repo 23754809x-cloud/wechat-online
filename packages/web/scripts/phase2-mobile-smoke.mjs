@@ -118,6 +118,17 @@ try {
 	}, imageData);
 	await page.reload({ waitUntil: "domcontentloaded" });
 	await settle();
+
+	const imageWrapper = page.getByTestId("mobile-message-action-phase2-image-preview");
+	await longPress(imageWrapper);
+	assert(
+		(await page.getByTestId("mobile-image-preview").count()) === 0,
+		"long press leaked through and opened the image preview behind the message menu",
+	);
+	await page.getByRole("button", { name: "关闭消息菜单" }).click();
+	await page.getByTestId("mobile-message-menu").waitFor({ state: "detached" });
+	await page.waitForTimeout(950);
+
 	await page.getByRole("button", { name: "查看图片" }).click();
 	await page.getByTestId("mobile-image-preview").waitFor({ state: "visible" });
 	assert(
@@ -142,7 +153,9 @@ try {
 	await page.screenshot({ path: path.join(outputDir, "03-group-settings-persisted.png"), fullPage: true });
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
-	console.log("[phase2-mobile-smoke] OK: message actions, image preview and group settings passed.");
+	console.log(
+		"[phase2-mobile-smoke] OK: message actions, long-press click suppression, image preview and group settings passed.",
+	);
 } catch (error) {
 	console.error("[phase2-mobile-smoke] FAILED", error);
 	if (runtimeErrors.length) console.error(runtimeErrors.join("\n"));
