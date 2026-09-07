@@ -3,6 +3,7 @@ import KeyboardOutlinedSVG from "@/assets/keyboard-outlined.svg?react";
 import StickerOutlinedSVG from "@/assets/sticker-outlined.svg?react";
 import VoiceSVG from "@/assets/voice-outlined.svg?react";
 import { useCompactRuntime } from "@/runtime/compact";
+import { inputterValueAtom } from "@/stateV2/conversation";
 import {
 	EMetaDataType,
 	activatedNodeAtom,
@@ -10,9 +11,11 @@ import {
 } from "@/stateV2/detectedNode";
 import { getNodesAtomsValueSnapshot } from "@/stateV2/detectedNode/nodeAtom";
 import { modeAtom } from "@/stateV2/mode";
+import { SLATE_INITIAL_VALUE } from "@/wechatComponents/SlateText/utils";
 import { useSetAtom } from "jotai";
-import { isArray, keys } from "lodash-es";
-import { useState } from "react";
+import { isArray, isEqual, keys } from "lodash-es";
+import { useRef, useState } from "react";
+import type { Descendant } from "slate";
 import { useConversationAPI } from "../context";
 import BottomPopup from "./BottomPopup";
 import EmojiPanel from "./EmojiPanel";
@@ -23,12 +26,16 @@ const ConversationFooter = () => {
 	const [showEmojiPanel, setShowEmojiPanel] = useState(false);
 	const [showCreatorPanel, setShowCreatorPanel] = useState(false);
 	const [hasDraft, setHasDraft] = useState(false);
+	const [visibleDraft, setVisibleDraft] = useState("");
+	const lastTouchSendAtRef = useRef(0);
 	const compact = useCompactRuntime();
-	const { sendTextMessage } = useConversationAPI();
+	const { inputEditor, sendTextMessage } = useConversationAPI();
+	const setInputValue = useSetAtom(inputterValueAtom);
 	const setMode = useSetAtom(modeAtom);
 	const setActivatedNode = useSetAtom(activatedNodeAtom);
 	const inputComponentProps = {
 		onDraftPresenceChange: setHasDraft,
+		onVisibleDraftChange: setVisibleDraft,
 		...(compact ? { showEmojiPanel, setShowEmojiPanel } : {}),
 	};
 
@@ -38,9 +45,29 @@ const ConversationFooter = () => {
 	};
 
 	const sendCurrentMessage = () => {
+		const cleanedVisibleDraft = visibleDraft.replace(/[\u200B\uFEFF]/g, "");
+		const liveEditorValue = inputEditor.children as Descendant[];
+		let valueToSend = liveEditorValue;
+
+		// iOS/WebKit can paint composition/input text before Slate's onChange has
+		// synchronized the Jotai draft. When that happens, persist the visible text
+		// into the same atom that sendTextMessage reads before invoking send.
+		if (isEqual(liveEditorValue, SLATE_INITIAL_VALUE) && cleanedVisibleDraft.length > 0) {
+			valueToSend = [
+				{
+					type: "paragraph",
+					children: [{ text: cleanedVisibleDraft }],
+				},
+			] as Descendant[];
+		}
+
+		if (isEqual(valueToSend, SLATE_INITIAL_VALUE)) return;
+		setInputValue(valueToSend);
 		setShowEmojiPanel(false);
 		setShowCreatorPanel(false);
 		sendTextMessage();
+		setHasDraft(false);
+		setVisibleDraft("");
 	};
 
 	const openCreatorOrDesktopEditor = () => {
@@ -90,7 +117,16 @@ const ConversationFooter = () => {
 							type="button"
 							aria-label="发送消息"
 							className="mb-[4px] h-[34px] shrink-0 rounded-[5px] bg-[#07c160] px-[12px] font-medium text-[15px] text-white active:bg-[#06ad56]"
-							onClick={sendCurrentMessage}
+							onPointerDown={(event) => {
+								if (event.pointerType !== "touch") return;
+								event.preventDefault();
+								lastTouchSendAtRef.current = Date.now();
+								sendCurrentMessage();
+							}}
+							onClick={() => {
+								if (Date.now() - lastTouchSendAtRef.current < 700) return;
+								sendCurrentMessage();
+							}}
 						>
 							发送
 						</button>
