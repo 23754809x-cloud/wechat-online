@@ -10,14 +10,17 @@ import {
 	getConversationListValueSnapshot,
 } from "@/stateV2/conversation";
 import { EMetaDataType, type StaticMetaData, allNodesTreeAtom } from "@/stateV2/detectedNode";
+import { setDialogueListValue } from "@/stateV2/dialogueList";
 import { SubnodeOutlined } from "@ant-design/icons";
 import { Modal, Tooltip } from "antd";
 import { useAtom, useSetAtom } from "jotai";
 import { useMemo } from "react";
 import { ReactSortable } from "react-sortablejs";
+import { Node } from "slate";
 import { twJoin } from "tailwind-merge";
 import { useConversationAPI } from "../context";
 import ConversationItem from "./ConversationItem";
+import MobileMessageActions from "./MobileMessageActions";
 
 const ConversationList = () => {
 	const { listRef, conversationId, isGroupChat, sendTransfer, sendRedPacketAcceptedReply } =
@@ -31,11 +34,79 @@ const ConversationList = () => {
 		[conversationList],
 	);
 
+	const getPreviewText = (item?: TConversationItem) => {
+		if (!item) return "";
+		if (item.type === EConversationType.text) {
+			return item.textContent.map((node) => Node.string(node)).join("").trim() || "[文本]";
+		}
+		if (item.type === EConversationType.voice) return "[语音]";
+		if (item.type === EConversationType.transfer) return "[转账]";
+		if (item.type === EConversationType.redPacket) return "[红包]";
+		if (item.type === EConversationType.centerText) return item.simpleContent;
+		return `[${ConversationTypeLabel[item.type]}]`;
+	};
+
+	const syncDialoguePreview = (nextList: TConversationItem[]) => {
+		const lastMessage = getPreviewText(nextList.at(-1));
+		setDialogueListValue((prev) =>
+			prev.map((dialogue) => {
+				const matched = isGroupChat
+					? dialogue.groupId === conversationId
+					: dialogue.friendId === conversationId;
+				return matched ? { ...dialogue, lastMessage } : dialogue;
+			}),
+		);
+	};
+
+	const updateConversationList = (
+		updater: (prev: TConversationItem[]) => TConversationItem[],
+	) => {
+		setConversationList((prev) => {
+			const next = updater(prev);
+			syncDialoguePreview(next);
+			return next;
+		});
+	};
+
+	const deleteConversationItem = (id: TConversationItem["id"]) => {
+		updateConversationList((prev) => prev.filter((v) => v.id !== id));
+	};
+
 	const handleOperationDelete = (id: TConversationItem["id"]) => {
 		Modal.confirm({
 			title: "是否删除该聊天记录？",
-			onOk: () => setConversationList((prev) => prev.filter((v) => v.id !== id)),
+			onOk: () => deleteConversationItem(id),
 		});
+	};
+
+	const handleMobileEditText = (id: TConversationItem["id"], text: string) => {
+		updateConversationList((prev) =>
+			prev.map((item) =>
+				item.id === id && item.type === EConversationType.text
+					? ({
+							...item,
+							textContent: [{ type: "paragraph", children: [{ text }] }],
+						} as TConversationItem)
+					: item,
+			),
+		);
+	};
+
+	const handleMobileRecall = (id: TConversationItem["id"]) => {
+		updateConversationList((prev) =>
+			prev.map((item) =>
+				item.id === id
+					? ({
+							id: item.id,
+							type: EConversationType.centerText,
+							role: item.role,
+							upperText: item.upperText,
+							sendTimestamp: item.sendTimestamp,
+							simpleContent: "你撤回了一条消息",
+						} as TConversationItem)
+					: item,
+			),
+		);
 	};
 
 	const generateTransferReplyConversation = (conversationItemId: TConversationItem["id"]) => {
@@ -131,34 +202,41 @@ const ConversationList = () => {
 						});
 					}
 					return (
-						<canBeDetected.div
-							className={twJoin("group flex flex-col", item.role, isEdit && "cursor-grab")}
+						<MobileMessageActions
 							key={item.id}
-							metaData={[
-								{
-									type: EMetaDataType.ConversationItem,
-									index: [conversationId, item.id],
-									treeItemDisplayName: (data) =>
-										`消息（${ConversationTypeLabel[data.type]}${data.role ? `-${data.role}` : ""}）`,
-									operations,
-									label: "单个消息",
-								},
-								...(isGroupChat
-									? []
-									: [
-											{
-												type: EMetaDataType.FirendProfile as const,
-												index: conversationId,
-												label: "好友个人信息",
-											},
-										]),
-								{ type: EMetaDataType.MyProfile, label: "个人信息" },
-							]}
-							nodeTreeSort
-							data-conversation-id={item.id}
+							item={item}
+							onDelete={deleteConversationItem}
+							onRecall={handleMobileRecall}
+							onEditText={handleMobileEditText}
 						>
-							<ConversationItem data={item} />
-						</canBeDetected.div>
+							<canBeDetected.div
+								className={twJoin("group flex flex-col", item.role, isEdit && "cursor-grab")}
+								metaData={[
+									{
+										type: EMetaDataType.ConversationItem,
+										index: [conversationId, item.id],
+										treeItemDisplayName: (data) =>
+											`消息（${ConversationTypeLabel[data.type]}${data.role ? `-${data.role}` : ""}）`,
+										operations,
+										label: "单个消息",
+									},
+									...(isGroupChat
+										? []
+										: [
+												{
+													type: EMetaDataType.FirendProfile as const,
+													index: conversationId,
+													label: "好友个人信息",
+												},
+											]),
+									{ type: EMetaDataType.MyProfile, label: "个人信息" },
+								]}
+								nodeTreeSort
+								data-conversation-id={item.id}
+							>
+								<ConversationItem data={item} />
+							</canBeDetected.div>
+						</MobileMessageActions>
 					);
 				})}
 			</ReactSortable>
