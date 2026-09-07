@@ -28,6 +28,29 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
+async function verifyIOSCompositionShowsSend() {
+	const input = page.locator("#conversation-input");
+	await input.tap();
+	await input.evaluate((node) => {
+		node.textContent = "余光";
+		node.dispatchEvent(
+			new InputEvent("input", {
+				bubbles: true,
+				cancelable: false,
+				data: "余光",
+				inputType: "insertCompositionText",
+				isComposing: true,
+			}),
+		);
+	});
+	await page.getByRole("button", { name: "发送消息", exact: true }).waitFor({ state: "visible" });
+	assert(
+		(await page.getByRole("button", { name: "更多聊天创作功能" }).count()) === 0,
+		"iOS composition text was visible but plus button did not switch to send",
+	);
+	await page.screenshot({ path: path.join(outputDir, "ios-composition-send-visible.png"), fullPage: true });
+}
+
 async function typeAndTapSend(text, { verifyCompositionGuard = false } = {}) {
 	const input = page.locator("#conversation-input");
 	await input.tap();
@@ -67,13 +90,18 @@ async function typeAndTapSend(text, { verifyCompositionGuard = false } = {}) {
 }
 
 try {
-	const privateText = "手机点击发送按钮-单聊";
 	await page.goto(`${baseURL}#/conversation/1`, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(450);
 	assert(
 		(await page.getByRole("button", { name: "发送消息", exact: true }).count()) === 0,
 		"empty input incorrectly showed send button",
 	);
+	await verifyIOSCompositionShowsSend();
+
+	// Reload after the low-level WebKit composition reproduction so the Slate editor starts clean.
+	await page.reload({ waitUntil: "domcontentloaded" });
+	await page.waitForTimeout(300);
+	const privateText = "手机点击发送按钮-单聊";
 	await typeAndTapSend(privateText, { verifyCompositionGuard: true });
 	await page.reload({ waitUntil: "domcontentloaded" });
 	await page.getByText(privateText, { exact: true }).waitFor({ state: "visible" });
@@ -87,7 +115,7 @@ try {
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
 	console.log(
-		"[mobile-send-smoke] OK: touch send works for private/group chat, persists after reload, and IME composition is guarded.",
+		"[mobile-send-smoke] OK: iOS composition text shows send, touch send works for private/group chat, persists after reload, and IME Enter is guarded.",
 	);
 } catch (error) {
 	console.error("[mobile-send-smoke] FAILED", error);
