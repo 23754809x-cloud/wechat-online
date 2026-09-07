@@ -53,10 +53,11 @@ const Input = ({ showEmojiPanel, setShowEmojiPanel }: Props) => {
 					className="min-h-[42px] rounded-[5px] bg-white px-[11px] py-[8px] text-[17px] leading-[24px] caret-wechatBrand-3 focus:outline-none"
 					renderElement={(props) => <Element {...props} />}
 					onKeyDown={(ev) => {
-						if (ev.key === "Enter") {
-							ev.preventDefault();
-							sendTextMessage();
-						}
+						if (ev.key !== "Enter") return;
+						if (ev.nativeEvent.isComposing) return;
+						if (!compact && ev.shiftKey) return;
+						ev.preventDefault();
+						sendTextMessage();
 					}}
 					enterKeyHint="send"
 					inputMode={compact ? mobileInputMode : "text"}
