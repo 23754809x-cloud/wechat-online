@@ -11,9 +11,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 type CreatorSection = "home" | "profile" | "contacts";
 
+type HoldStart = {
+	pointerId: number;
+	x: number;
+	y: number;
+};
+
 const inputClass =
 	"w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-[16px] text-black outline-none focus:border-[#07c160]";
 const labelClass = "mb-1.5 block text-xs text-black/45";
+const HOLD_MOVE_TOLERANCE = 12;
 
 const cloneProfile = (profile: IStateProfile): IStateProfile => ({
 	...profile,
@@ -29,6 +36,7 @@ const MobileCreatorPanel = () => {
 	const [section, setSection] = useState<CreatorSection>("home");
 	const [draft, setDraft] = useState<IStateProfile | null>(null);
 	const holdTimerRef = useRef<number | null>(null);
+	const holdStartRef = useRef<HoldStart | null>(null);
 
 	const myself = useMemo(
 		() => profiles.find((profile) => profile.id === MYSELF_ID),
@@ -47,6 +55,7 @@ const MobileCreatorPanel = () => {
 				window.clearTimeout(holdTimerRef.current);
 				holdTimerRef.current = null;
 			}
+			holdStartRef.current = null;
 		};
 		const handlePointerDown = (event: PointerEvent) => {
 			if (open) return;
@@ -56,19 +65,34 @@ const MobileCreatorPanel = () => {
 				event.clientX <= window.innerWidth * 0.72;
 			if (!inHeaderHotspot) return;
 			clearHold();
+			holdStartRef.current = {
+				pointerId: event.pointerId,
+				x: event.clientX,
+				y: event.clientY,
+			};
 			holdTimerRef.current = window.setTimeout(() => {
+				holdTimerRef.current = null;
+				holdStartRef.current = null;
 				setSection("home");
 				setOpen(true);
 			}, 950);
 		};
+		const handlePointerMove = (event: PointerEvent) => {
+			const start = holdStartRef.current;
+			if (!start || start.pointerId !== event.pointerId) return;
+			const moved = Math.hypot(event.clientX - start.x, event.clientY - start.y);
+			if (moved > HOLD_MOVE_TOLERANCE) clearHold();
+		};
 
 		window.addEventListener("pointerdown", handlePointerDown, true);
+		window.addEventListener("pointermove", handlePointerMove, true);
 		window.addEventListener("pointerup", clearHold, true);
 		window.addEventListener("pointercancel", clearHold, true);
 		window.addEventListener("scroll", clearHold, true);
 		return () => {
 			clearHold();
 			window.removeEventListener("pointerdown", handlePointerDown, true);
+			window.removeEventListener("pointermove", handlePointerMove, true);
 			window.removeEventListener("pointerup", clearHold, true);
 			window.removeEventListener("pointercancel", clearHold, true);
 			window.removeEventListener("scroll", clearHold, true);
