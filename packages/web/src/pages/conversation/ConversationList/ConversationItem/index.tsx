@@ -1,10 +1,11 @@
 import { MYSELF_ID } from "@/faker/user";
 import { EConversationType, type TConversationItem } from "@/stateV2/conversation";
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import CenterText from "./CenterText";
 import File from "./File";
 import Image from "./Image";
+import MobileMessageLongPress from "./MobileMessageLongPress";
 import PersonalCard from "./PersonalCard";
 import RedPacket from "./RedPacket";
 import RedPacketAcceptedReply from "./RedPacketAcceptedReply";
@@ -18,12 +19,14 @@ type Props = {
 
 const ConversationItem = ({ data }: Props) => {
 	const { type, role, upperText, id: conversationItemId } = data;
-	const { id } = useParams<{ id?: string }>();
+	const { id, groupId } = useParams<{ id?: string; groupId?: string }>();
+	const conversationId = groupId ?? id ?? "";
 	const senderId = data.senderId ?? (role === "friend" ? (id ?? "") : MYSELF_ID);
+	let content: ReactNode = null;
 
 	switch (type) {
 		case EConversationType.text:
-			return (
+			content = (
 				<Text
 					conversationItemId={conversationItemId}
 					upperText={upperText}
@@ -32,16 +35,18 @@ const ConversationItem = ({ data }: Props) => {
 					referenceId={data.referenceId}
 				/>
 			);
+			break;
 		case EConversationType.centerText:
-			return (
+			content = (
 				<CenterText
 					upperText={upperText}
 					simpleContent={data.simpleContent}
 					extraClassName={data.extraClassName}
 				/>
 			);
+			break;
 		case EConversationType.transfer:
-			return (
+			content = (
 				<Transfer
 					role={role}
 					upperText={upperText}
@@ -52,8 +57,9 @@ const ConversationItem = ({ data }: Props) => {
 					originalSender={data.originalSender}
 				/>
 			);
+			break;
 		case EConversationType.redPacket:
-			return (
+			content = (
 				<RedPacket
 					role={role}
 					upperText={upperText}
@@ -64,12 +70,14 @@ const ConversationItem = ({ data }: Props) => {
 					originalSender={data.originalSender}
 				/>
 			);
+			break;
 		case EConversationType.image:
-			return (
+			content = (
 				<Image role={role} imageInfo={data.imageInfo} upperText={upperText} senderId={senderId} />
 			);
+			break;
 		case EConversationType.video:
-			return (
+			content = (
 				<Image
 					role={role}
 					imageInfo={data.videoInfo}
@@ -78,8 +86,9 @@ const ConversationItem = ({ data }: Props) => {
 					isVideo
 				/>
 			);
+			break;
 		case EConversationType.voice:
-			return (
+			content = (
 				<Voice
 					senderId={senderId}
 					upperText={upperText}
@@ -90,12 +99,14 @@ const ConversationItem = ({ data }: Props) => {
 					stt={data.stt}
 				/>
 			);
+			break;
 		case EConversationType.redPacketAcceptedReply:
-			return (
+			content = (
 				<RedPacketAcceptedReply id={data.id} redPacketId={data.redPacketId} upperText={upperText} />
 			);
+			break;
 		case EConversationType.personalCard:
-			return (
+			content = (
 				<PersonalCard
 					avatarInfo={data.avatarInfo}
 					nickname={data.nickname}
@@ -103,11 +114,20 @@ const ConversationItem = ({ data }: Props) => {
 					upperText={upperText}
 				/>
 			);
+			break;
 		case EConversationType.file:
-			return <File fileData={data.fileData} senderId={senderId} upperText={upperText} />;
+			content = <File fileData={data.fileData} senderId={senderId} upperText={upperText} />;
+			break;
 		default:
-			return null;
+			content = null;
 	}
+
+	if (!content) return null;
+	return (
+		<MobileMessageLongPress item={data} conversationId={conversationId}>
+			{content}
+		</MobileMessageLongPress>
+	);
 };
 
 export default memo(ConversationItem);
