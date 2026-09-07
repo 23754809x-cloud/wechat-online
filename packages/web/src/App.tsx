@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import LeftPanel from "./components/LeftPanel";
 import MobileCreatorAdvancedPanel from "./components/MobileCreatorAdvancedPanel";
+import MobileCreatorLayerGuard from "./components/MobileCreatorLayerGuard";
 import MobileCreatorPanel from "./components/MobileCreatorPanel";
 import RightPanel from "./components/RightPanel";
 import Screen from "./components/Screen";
@@ -31,6 +32,7 @@ const App = () => {
 				</div>
 				<RightPanel />
 			</div>
+			<MobileCreatorLayerGuard />
 			<MobileCreatorPanel />
 			<MobileCreatorAdvancedPanel />
 			<Tour />

@@ -2,6 +2,7 @@ import { useCompactRuntime } from "@/runtime/compact";
 import { EConversationType, type TConversationItem } from "@/stateV2/conversation";
 import { Node } from "slate";
 import {
+	type MouseEvent as ReactMouseEvent,
 	type PointerEvent as ReactPointerEvent,
 	type PropsWithChildren,
 	useRef,
@@ -50,6 +51,7 @@ const MobileMessageActions = ({
 	const compact = useCompactRuntime();
 	const holdTimer = useRef<number | null>(null);
 	const startPoint = useRef<MenuPoint | null>(null);
+	const suppressClickUntil = useRef(0);
 	const [menuPoint, setMenuPoint] = useState<MenuPoint | null>(null);
 	const [editing, setEditing] = useState(false);
 	const [editValue, setEditValue] = useState("");
@@ -61,6 +63,11 @@ const MobileMessageActions = ({
 			window.clearTimeout(holdTimer.current);
 			holdTimer.current = null;
 		}
+	};
+
+	const finishPointer = () => {
+		clearHold();
+		startPoint.current = null;
 	};
 
 	const openMenuAt = (x: number, y: number) => {
@@ -75,6 +82,9 @@ const MobileMessageActions = ({
 		startPoint.current = { x: event.clientX, y: event.clientY };
 		clearHold();
 		holdTimer.current = window.setTimeout(() => {
+			// A long press can still produce a synthetic click on mobile Safari/Chromium.
+			// Suppress that trailing click so an image/transfer does not open behind the menu.
+			suppressClickUntil.current = Date.now() + 900;
 			openMenuAt(event.clientX, event.clientY);
 			if ("vibrate" in navigator) navigator.vibrate?.(15);
 		}, 560);
@@ -83,7 +93,21 @@ const MobileMessageActions = ({
 	const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
 		const start = startPoint.current;
 		if (!start) return;
-		if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 9) clearHold();
+		if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 9) finishPointer();
+	};
+
+	const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+		if (Date.now() > suppressClickUntil.current) return;
+		const target = event.target instanceof Element ? event.target : null;
+		if (
+			target?.closest('[data-testid="mobile-message-menu"]') ||
+			target?.closest('[data-testid="mobile-message-editor"]')
+		) {
+			return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		suppressClickUntil.current = 0;
 	};
 
 	const closeMenu = () => setMenuPoint(null);
@@ -95,8 +119,9 @@ const MobileMessageActions = ({
 			data-testid={`mobile-message-action-${item.id}`}
 			onPointerDown={handlePointerDown}
 			onPointerMove={handlePointerMove}
-			onPointerUp={clearHold}
-			onPointerCancel={clearHold}
+			onPointerUp={finishPointer}
+			onPointerCancel={finishPointer}
+			onClickCapture={handleClickCapture}
 			onContextMenu={(event) => {
 				event.preventDefault();
 				openMenuAt(event.clientX, event.clientY);
