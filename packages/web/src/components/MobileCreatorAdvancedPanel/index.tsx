@@ -40,7 +40,7 @@ const getMessagePreview = (item?: TConversationItem) => {
 
 const ChatRecordEditor = ({ conversationId }: { conversationId: string }) => {
 	const [messages, setMessages] = useAtom(conversationListAtom(conversationId));
-	const [dialogues, setDialogues] = useAtom(dialogueListAtom);
+	const [, setDialogues] = useAtom(dialogueListAtom);
 	const [profiles] = useAtom(allProfilesAtom);
 	const [groups] = useAtom(allGroupsAtom);
 	const [editingId, setEditingId] = useState<string | null>(null);
@@ -199,7 +199,7 @@ const MobileCreatorAdvancedPanel = () => {
 	const [section, setSection] = useState<Section>("home");
 	const [profiles, setProfiles] = useAtom(allProfilesAtom);
 	const [groups, setGroups] = useAtom(allGroupsAtom);
-	const [dialogues, setDialogues] = useAtom(dialogueListAtom);
+	const [, setDialogues] = useAtom(dialogueListAtom);
 	const [selectedConversationId, setSelectedConversationId] = useState<string>("");
 	const [groupDraft, setGroupDraft] = useState<IStateGroup | null>(null);
 	const [pendingContactDeleteId, setPendingContactDeleteId] = useState<string | null>(null);
