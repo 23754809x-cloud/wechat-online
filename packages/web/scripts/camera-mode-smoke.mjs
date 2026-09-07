@@ -36,32 +36,42 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
+async function dispatchTouch(type, { x, y, pointerId = 1 }) {
+	await page.evaluate(
+		({ type, x, y, pointerId }) => {
+			document.body.dispatchEvent(
+				new PointerEvent(type, {
+					bubbles: true,
+					clientX: x,
+					clientY: y,
+					pointerId,
+					pointerType: "touch",
+					isPrimary: true,
+				}),
+			);
+		},
+		{ type, x, y, pointerId },
+	);
+}
+
+async function verifyMovedHoldDoesNotOpenCreator() {
+	const centerX = 215;
+	await dispatchTouch("pointerdown", { x: centerX, y: 44, pointerId: 7 });
+	await page.waitForTimeout(220);
+	await dispatchTouch("pointermove", { x: centerX + 34, y: 44, pointerId: 7 });
+	await page.waitForTimeout(900);
+	assert(
+		(await page.getByTestId("mobile-creator-center").count()) === 0,
+		"creator opened after the hidden-entry touch moved away from its start point",
+	);
+	await dispatchTouch("pointerup", { x: centerX + 34, y: 44, pointerId: 7 });
+}
+
 async function openCreator() {
-	await page.evaluate(() => {
-		document.body.dispatchEvent(
-			new PointerEvent("pointerdown", {
-				bubbles: true,
-				clientX: window.innerWidth / 2,
-				clientY: 44,
-				pointerId: 1,
-				pointerType: "touch",
-				isPrimary: true,
-			}),
-		);
-	});
+	const centerX = 215;
+	await dispatchTouch("pointerdown", { x: centerX, y: 44, pointerId: 1 });
 	await page.waitForTimeout(1100);
-	await page.evaluate(() => {
-		document.body.dispatchEvent(
-			new PointerEvent("pointerup", {
-				bubbles: true,
-				clientX: window.innerWidth / 2,
-				clientY: 44,
-				pointerId: 1,
-				pointerType: "touch",
-				isPrimary: true,
-			}),
-		);
-	});
+	await dispatchTouch("pointerup", { x: centerX, y: 44, pointerId: 1 });
 	await page.getByTestId("mobile-creator-center").waitFor({ state: "visible" });
 }
 
@@ -75,6 +85,8 @@ try {
 		"camera mode class is missing while creator is closed",
 	);
 	assert(!((await page.locator("body").innerText()).includes("创作中心")), "creator text leaked into capture mode");
+
+	await verifyMovedHoldDoesNotOpenCreator();
 
 	const manifest = await page.locator('link[rel="manifest"]').getAttribute("href");
 	assert(Boolean(manifest?.includes("manifest.webmanifest")), "PWA manifest link missing");
@@ -121,7 +133,9 @@ try {
 
 	assert(failedResponses.length === 0, `HTTP failures:\n${failedResponses.join("\n")}`);
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
-	console.log("[camera-mode-smoke] OK: hidden creator, profile/contact persistence, capture cleanup and manifest passed.");
+	console.log(
+		"[camera-mode-smoke] OK: capture isolation, moved-hold cancellation, persistence and manifest passed.",
+	);
 } catch (error) {
 	console.error("[camera-mode-smoke] FAILED", error);
 	if (failedResponses.length) console.error(failedResponses.join("\n"));
