@@ -28,9 +28,9 @@ function assert(condition, message) {
 	if (!condition) throw new Error(message);
 }
 
-async function typeAndTapSend(text) {
+async function typeAndTapSend(text, { verifyCompositionGuard = false } = {}) {
 	const input = page.locator("#conversation-input");
-	await input.click();
+	await input.tap();
 	await input.pressSequentially(text, { delay: 12 });
 
 	const sendButton = page.getByRole("button", { name: "发送消息", exact: true });
@@ -39,8 +39,28 @@ async function typeAndTapSend(text) {
 		(await page.getByRole("button", { name: "更多聊天创作功能" }).count()) === 0,
 		"plus button remained visible while text was ready to send",
 	);
+
+	if (verifyCompositionGuard) {
+		const beforeCount = await page.locator('[data-testid^="mobile-message-action-"]').count();
+		await input.evaluate((node) => {
+			node.dispatchEvent(
+				new KeyboardEvent("keydown", {
+					key: "Enter",
+					code: "Enter",
+					bubbles: true,
+					cancelable: true,
+					isComposing: true,
+				}),
+			);
+		});
+		await page.waitForTimeout(120);
+		const afterCount = await page.locator('[data-testid^="mobile-message-action-"]').count();
+		assert(afterCount === beforeCount, "IME composing Enter incorrectly sent the message");
+		await sendButton.waitFor({ state: "visible" });
+	}
+
 	await page.screenshot({ path: path.join(outputDir, `ready-${Date.now()}.png`), fullPage: true });
-	await sendButton.click();
+	await sendButton.tap();
 	await page.getByText(text, { exact: true }).waitFor({ state: "visible" });
 	await page.getByRole("button", { name: "更多聊天创作功能" }).waitFor({ state: "visible" });
 	assert((await sendButton.count()) === 0, "send button did not return to plus after sending");
@@ -50,8 +70,11 @@ try {
 	const privateText = "手机点击发送按钮-单聊";
 	await page.goto(`${baseURL}#/conversation/1`, { waitUntil: "domcontentloaded" });
 	await page.waitForTimeout(450);
-	assert((await page.getByRole("button", { name: "发送消息", exact: true }).count()) === 0, "empty input incorrectly showed send button");
-	await typeAndTapSend(privateText);
+	assert(
+		(await page.getByRole("button", { name: "发送消息", exact: true }).count()) === 0,
+		"empty input incorrectly showed send button",
+	);
+	await typeAndTapSend(privateText, { verifyCompositionGuard: true });
 	await page.reload({ waitUntil: "domcontentloaded" });
 	await page.getByText(privateText, { exact: true }).waitFor({ state: "visible" });
 
@@ -63,7 +86,9 @@ try {
 	await page.getByText(groupText, { exact: true }).waitFor({ state: "visible" });
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
-	console.log("[mobile-send-smoke] OK: visible send button works for private and group chat and persists after reload.");
+	console.log(
+		"[mobile-send-smoke] OK: touch send works for private/group chat, persists after reload, and IME composition is guarded.",
+	);
 } catch (error) {
 	console.error("[mobile-send-smoke] FAILED", error);
 	if (runtimeErrors.length) console.error(runtimeErrors.join("\n"));
