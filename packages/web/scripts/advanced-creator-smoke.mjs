@@ -60,6 +60,17 @@ async function openAdvanced() {
 	await page.getByTestId("advanced-creator-entry").waitFor({ state: "visible" });
 	await page.getByTestId("advanced-creator-entry").click();
 	await page.getByTestId("advanced-creator-center").waitFor({ state: "visible" });
+	await page.waitForTimeout(80);
+	const baseCenter = page.getByTestId("mobile-creator-center");
+	assert(await baseCenter.isHidden(), "base creator stayed visible under advanced creator");
+	assert(
+		(await baseCenter.getAttribute("aria-hidden")) === "true",
+		"base creator was not removed from the accessibility tree",
+	);
+	assert(
+		(await page.getByRole("button", { name: "返回", exact: true }).count()) === 1,
+		"duplicate creator navigation controls are still exposed",
+	);
 }
 
 async function advancedBack() {
@@ -147,7 +158,7 @@ try {
 
 	assert(runtimeErrors.length === 0, `runtime errors:\n${runtimeErrors.join("\n")}`);
 	console.log(
-		"[advanced-creator-smoke] OK: cleanup, group creation and chat history editing persisted.",
+		"[advanced-creator-smoke] OK: layer isolation, cleanup, group creation and chat history editing persisted.",
 	);
 } catch (error) {
 	console.error("[advanced-creator-smoke] FAILED", error);
